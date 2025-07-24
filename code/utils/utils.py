@@ -10,10 +10,20 @@ def log_step(title: str, payload=None, symbol: str = "🟢"):
         from pprint import pprint
         pprint(payload)
 
+def log_step_web(msg, symbol="🔹", log=None):
+    print(f"{symbol} {msg}")
+    if log is not None:
+        log.append(f"{symbol} {msg}")
+
 def log_error(message: str, err: Exception = None):
     print(f"\n[red]❌ {message}[/red]")
     if err:
         print(f"[dim]{str(err)}[/dim]")
+
+def log_error_web(msg, symbol="❌", log=None):
+    print(f"{symbol} {msg}")
+    if log is not None:
+        log.append(f"{symbol} {msg}")
 
 def log_json_block(title: str, block):
     from rich.panel import Panel

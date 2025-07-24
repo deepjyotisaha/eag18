@@ -12,6 +12,10 @@ document.getElementById('agent-form').addEventListener('submit', async function(
         });
         const data = await res.json();
         responseBox.textContent = data.response;
+        if (data.log) {
+            const logBox = document.getElementById('log');
+            logBox.innerHTML = data.log.map(step => `<div>${step}</div>`).join('');
+        }
     } catch (err) {
         responseBox.textContent = "Error: Could not reach the agent.";
     }

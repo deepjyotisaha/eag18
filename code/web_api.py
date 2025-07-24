@@ -13,11 +13,12 @@ async def agent_responds(query):
 def ask():
     data = request.get_json(silent=True)
     if not data or 'question' not in data:
-        return jsonify({'response': 'Invalid request: missing \"question\"'}), 400
+        return jsonify({'response': 'Invalid request: missing "question"'}), 400
     question = data['question']
-    # Call the async agent logic from sync Flask route
-    response = asyncio.run(agent_responds(question))
-    return jsonify({'response': response})
+    log = []
+    # Call your agent, passing log
+    answer = asyncio.run(agent_responds(question, log))
+    return jsonify({'response': answer, 'log': log})
 
 @app.route('/')
 def serve_index():
