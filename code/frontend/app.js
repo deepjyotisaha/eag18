@@ -7,6 +7,9 @@ class ChatApp {
         this.sendBtn = document.getElementById('send-btn');
         this.isProcessing = false;
         this.statusPollingInterval = null;
+        this.fileInput = document.getElementById('file-input');
+        this.attachBtn = document.getElementById('attach-btn');
+        this.fileIndicator = null;
         
         this.initializeEventListeners();
         this.autoResizeTextarea();
@@ -49,6 +52,17 @@ class ChatApp {
         document.querySelector('.btn-icon[title="Export Chat"]').addEventListener('click', () => {
             this.exportChat();
         });
+
+        if (this.attachBtn && this.fileInput) {
+            this.attachBtn.addEventListener('click', () => {
+                this.fileInput.click();
+            });
+        }
+        if (this.fileInput) {
+            this.fileInput.addEventListener('change', () => {
+                this.showFileIndicator();
+            });
+        }
     }
 
     autoResizeTextarea() {
@@ -68,9 +82,6 @@ class ChatApp {
         // Show agent processing placeholder with timer
         const agentProcessingDiv = this.showAgentProcessingPlaceholder();
 
-        // Show typing indicator (hidden until real response)
-        // const typingIndicator = this.showTypingIndicator();
-
         // Disable input during processing
         this.setProcessingState(true);
 
@@ -78,17 +89,25 @@ class ChatApp {
         this.startStatusPolling();
 
         try {
-            const response = await this.callAPI(message);
-            // Remove processing placeholder and show real response
+            // Use FormData for file upload
+            const formData = new FormData();
+            formData.append('question', message);
+            if (this.fileInput && this.fileInput.files.length > 0) {
+                for (let i = 0; i < this.fileInput.files.length; i++) {
+                    formData.append('files', this.fileInput.files[i]);
+                }
+            }
+            const response = await this.callAPI(formData);
             this.removeAgentProcessingPlaceholder(agentProcessingDiv);
             this.addMessage(response, 'agent');
+            if (this.fileInput) this.fileInput.value = '';
+            this.clearFileIndicator();
         } catch (error) {
             this.removeAgentProcessingPlaceholder(agentProcessingDiv);
             this.addMessage('I apologize, but I encountered an error processing your request. Please try again.', 'agent');
             console.error('API Error:', error);
         } finally {
             this.setProcessingState(false);
-            // Stop polling after a delay to allow final status update
             setTimeout(() => this.stopStatusPolling(), 3000);
         }
     }
@@ -170,14 +189,11 @@ class ChatApp {
         }
     }
 
-    async callAPI(message) {
+    async callAPI(formData) {
         try {
             const response = await fetch('http://127.0.0.1:5000/ask', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ question: message })
+                body: formData
             });
 
             if (!response.ok) {
@@ -376,6 +392,39 @@ class ChatApp {
             // Stop timer animation
             if (placeholderDiv._timerInterval) clearInterval(placeholderDiv._timerInterval);
             placeholderDiv.remove();
+        }
+    }
+
+    showFileIndicator() {
+        // Remove old indicator
+        if (this.fileIndicator && this.fileIndicator.parentNode) {
+            this.fileIndicator.parentNode.removeChild(this.fileIndicator);
+        }
+        if (!this.fileInput || this.fileInput.files.length === 0) return;
+        // Create new indicator
+        const indicator = document.createElement('div');
+        indicator.className = 'file-indicator';
+        indicator.style = 'margin: 6px 0 0 0; display: flex; flex-wrap: wrap; gap: 6px;';
+        for (let i = 0; i < this.fileInput.files.length; i++) {
+            const file = this.fileInput.files[i];
+            const chip = document.createElement('span');
+            chip.className = 'file-chip';
+            chip.style = 'background: #e0e7ef; color: #334155; border-radius: 12px; padding: 3px 10px; font-size: 12px; display: flex; align-items: center; gap: 4px;';
+            chip.innerHTML = `<i class='fas fa-file'></i> ${file.name}`;
+            indicator.appendChild(chip);
+        }
+        // Insert below the input-wrapper
+        const inputWrapper = this.chatForm.querySelector('.input-wrapper');
+        if (inputWrapper && inputWrapper.parentNode) {
+            inputWrapper.parentNode.insertBefore(indicator, inputWrapper.nextSibling);
+        }
+        this.fileIndicator = indicator;
+    }
+
+    clearFileIndicator() {
+        if (this.fileIndicator && this.fileIndicator.parentNode) {
+            this.fileIndicator.parentNode.removeChild(this.fileIndicator);
+            this.fileIndicator = null;
         }
     }
 }

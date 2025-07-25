@@ -84,20 +84,14 @@
 
             <!-- Chat Input -->
             <div class="chat-input-container">
-                <form id="chat-form" class="chat-form">
+                <form id="chat-form" class="chat-form" autocomplete="off">
+                    <input type="file" id="file-input" multiple style="display:none;" />
                     <div class="input-wrapper">
-                        <textarea 
-                            id="message-input" 
-                            placeholder="Describe your task or ask a question..."
-                            rows="1"
-                            autocomplete="off"
-                        ></textarea>
-                        <button type="submit" class="send-btn" id="send-btn">
-                            <i class="fas fa-paper-plane"></i>
-                        </button>
+                        <textarea id="message-input" rows="1" placeholder="Type your message..." autocomplete="off"></textarea>
+                        <button type="submit" id="send-btn" class="send-btn"><i class="fas fa-paper-plane"></i></button>
                     </div>
                     <div class="input-actions">
-                        <button type="button" class="action-btn" title="Upload Files">
+                        <button type="button" class="action-btn" id="attach-btn" title="Attach File">
                             <i class="fas fa-paperclip"></i>
                         </button>
                         <button type="button" class="action-btn" title="Voice Input">

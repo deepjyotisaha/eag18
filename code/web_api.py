@@ -9,6 +9,8 @@ from dotenv import load_dotenv
 from pathlib import Path
 import sys
 import os
+import uuid
+import shutil
 
 # Add the current directory to Python path to import modules
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -200,30 +202,50 @@ def ask():
     """Handle chat requests from the frontend"""
     global current_agent_state
     try:
-        data = request.get_json(silent=True)
-        if not data or 'question' not in data:
-            return jsonify({'response': 'Invalid request: missing "question"'}), 400
-        
-        question = data['question']
-        uploaded_files = data.get('uploaded_files', [])
-        file_manifest = data.get('file_manifest', [])
-        
+        # PATCH: Handle multipart/form-data for file uploads
+        if request.content_type and request.content_type.startswith('multipart/form-data'):
+            question = request.form.get('question', '')
+            files = request.files.getlist('files')
+        else:
+            data = request.get_json(silent=True)
+            if not data or 'question' not in data:
+                return jsonify({'response': 'Invalid request: missing "question"'}), 400
+            question = data['question']
+            files = []
+
+        # PATCH: Save uploaded files to temp_files/{session_id}/
+        import time, os
+        session_id = f"session_{int(time.time())}_{uuid.uuid4().hex[:8]}"
+        temp_dir = os.path.join('temp_files', session_id)
+        os.makedirs(temp_dir, exist_ok=True)
+        uploaded_files = []
+        file_manifest = []
+        for file in files:
+            save_path = os.path.join(temp_dir, file.filename)
+            file.save(save_path)
+            uploaded_files.append(save_path)
+            file_manifest.append({
+                'name': file.filename,
+                'path': save_path,
+                'size': os.path.getsize(save_path),
+                'type': file.content_type
+            })
+
         print(f" Received question: {question}")
-        
         with context_lock:
             current_agent_state = "starting"
 
         # Run the agent asynchronously
         answer = run_in_loop(agent_responds(question, uploaded_files, file_manifest))
-        
+
         return jsonify({
             'response': answer,
             'status': 'success'
         })
-        
+
     except Exception as e:
         error_msg = f"Server error: {str(e)}"
-        print(f"❌ {error_msg}")
+        print(f"\u274c {error_msg}")
         return jsonify({
             'response': error_msg,
             'status': 'error'
