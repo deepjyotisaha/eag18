@@ -348,9 +348,10 @@ class ChatApp {
             <div class="message-content">
                 <div class="message-text" style="display:flex;align-items:center;gap:10px;">
                     <span class="processing-timer" style="display:inline-block;width:18px;height:18px;vertical-align:middle;">
-                        <svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="7" stroke="#3b82f6" stroke-width="2" fill="none" stroke-dasharray="44" stroke-dashoffset="0"><animateTransform attributeName="transform" type="rotate" from="0 9 9" to="360 9 9" dur="1s" repeatCount="indefinite"/></circle></svg>
+                        <i class='fas fa-clock fa-spin' style='color:#3b82f6;font-size:16px;'></i>
                     </span>
                     <span>Agent is processing your request...</span>
+                    <span class="processing-elapsed" style="font-size:12px;color:#64748b;margin-left:4px;min-width:32px;">(0s)</span>
                 </div>
                 <div class="message-text" style="font-size:12px;color:#2563eb;margin-top:4px;background:#f1f5f9;border-radius:6px;padding:6px 10px;display:inline-block;max-width:90%;">
                     <i class="fas fa-info-circle" style="margin-right:5px;"></i>View live agent plan and progress in the <b>right pane</b>.
@@ -360,11 +361,20 @@ class ChatApp {
         `;
         this.chatMessages.appendChild(messageDiv);
         this.scrollToBottom();
+        // Start timer animation
+        let seconds = 0;
+        messageDiv._timerInterval = setInterval(() => {
+            seconds++;
+            const elapsed = messageDiv.querySelector('.processing-elapsed');
+            if (elapsed) elapsed.textContent = `(${seconds}s)`;
+        }, 1000);
         return messageDiv;
     }
 
     removeAgentProcessingPlaceholder(placeholderDiv) {
         if (placeholderDiv && placeholderDiv.parentNode) {
+            // Stop timer animation
+            if (placeholderDiv._timerInterval) clearInterval(placeholderDiv._timerInterval);
             placeholderDiv.remove();
         }
     }
