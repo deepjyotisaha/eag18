@@ -596,7 +596,7 @@ body {
 .sidebar-item i { margin-right: 6px; color: #64748b; }
 .sidebar-empty { color: #94a3b8; font-size: 12px; margin-bottom: 8px; }
 .sidebar-session-title { font-weight: 600; color: #0f172a; margin-top: 8px; }
-.file-badge-new { background: #facc15; color: #92400e; font-size: 10px; border-radius: 8px; padding: 1px 6px; margin-left: 8px; font-weight: 700; animation: newfilefade 1.2s linear; }
+.file-badge-new { background: #facc15; color: #92400e; font-size: 8px; border-radius: 6px; padding: 1px 4px; margin-left: 4px; font-weight: 700; animation: newfilefade 1.2s linear; }
 @keyframes newfilefade { 0% { background: #fde68a; } 100% { background: #facc15; } }
 
 .sidebar-card-grid {
@@ -862,4 +862,212 @@ body {
     font-size: 11px;
     color: #94a3b8;
     font-weight: normal;
+}
+
+/* Enhanced folder card styles */
+.sidebar-card-folder {
+    position: relative;
+    overflow: hidden;
+}
+
+.sidebar-card-folder .sidebar-card-icon {
+    position: relative;
+}
+
+.folder-badge-new {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: #10b981;
+    color: white;
+    font-size: 8px;
+    border-radius: 6px;
+    padding: 1px 4px;
+    font-weight: 700;
+    animation: newfolderfade 1.2s linear;
+}
+
+@keyframes newfolderfade {
+    0% { background: #34d399; }
+    100% { background: #10b981; }
+}
+
+.folder-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    padding: 4px 0;
+    transition: background 0.2s;
+    border-radius: 4px;
+    margin: -4px -4px 4px -4px;
+    padding: 4px;
+}
+
+.folder-header:hover {
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.folder-title {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 13px;
+    flex: 1;
+}
+
+.folder-date {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-right: 8px;
+}
+
+.folder-toggle {
+    font-size: 10px;
+    color: #64748b;
+    transition: transform 0.2s ease;
+}
+
+.folder-header:hover .folder-toggle {
+    color: #3b82f6;
+}
+
+.folder-files {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #e2e8f0;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.folder-files-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.folder-file-item {
+    display: flex;
+    align-items: center;
+    padding: 6px 8px;
+    border-radius: 6px;
+    background: rgba(248, 250, 252, 0.8);
+    border: 1px solid rgba(226, 232, 240, 0.5);
+    transition: all 0.2s ease;
+}
+
+.folder-file-item:hover {
+    background: rgba(241, 245, 249, 0.9);
+    border-color: rgba(59, 130, 246, 0.2);
+    transform: translateX(2px);
+}
+
+.folder-file-icon {
+    position: relative;
+    margin-right: 8px;
+    font-size: 12px;
+    color: #64748b;
+    min-width: 16px;
+}
+
+.folder-file-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-width: 0;
+}
+
+.folder-file-content a {
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 12px;
+    border-radius: 4px;
+    padding: 2px 4px;
+    transition: background 0.2s, color 0.2s;
+    word-break: break-all;
+    flex: 1;
+    margin-right: 8px;
+}
+
+.folder-file-content a:hover {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.folder-file-content .file-preview-btn {
+    opacity: 1;
+    font-size: 10px;
+    padding: 3px;
+    min-width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.folder-file-content .file-preview-btn:hover {
+    background: #3b82f6;
+    color: white;
+}
+
+/* Enhanced file badge for new files */
+.file-badge-new {
+    background: #facc15;
+    color: #92400e;
+    font-size: 8px;
+    border-radius: 6px;
+    padding: 1px 4px;
+    margin-left: 4px;
+    font-weight: 700;
+    animation: newfilefade 1.2s linear;
+    position: absolute;
+    top: -2px;
+    right: -2px;
+}
+
+/* Improved card hover effects for folders */
+.sidebar-card-folder:hover {
+    box-shadow: 0 4px 12px rgba(30, 41, 59, 0.15), 0 2px 6px rgba(148, 163, 184, 0.12);
+    transform: translateY(-2px) scale(1.02);
+    border-color: #3b82f6;
+}
+
+/* Folder icon color variations */
+.sidebar-card-folder .sidebar-card-icon i.fa-folder {
+    color: #f59e0b;
+}
+
+.sidebar-card-folder .sidebar-card-icon i.fa-folder-plus {
+    color: #10b981;
+}
+
+/* Responsive adjustments for folder cards */
+@media (max-width: 900px) {
+    .folder-header {
+        padding: 6px;
+    }
+    
+    .folder-files {
+        margin-top: 6px;
+        padding-top: 6px;
+    }
+    
+    .folder-file-item {
+        padding: 4px 6px;
+    }
+    
+    .folder-file-content a {
+        font-size: 11px;
+    }
 }

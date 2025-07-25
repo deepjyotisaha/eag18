@@ -494,7 +494,7 @@ class ChatApp {
     }
 }
 
-let knownSidebarFiles = { reports: new Set(), code: {} };
+let knownSidebarFiles = { reports: new Set(), code: {}, sessions: new Set() };
 
 async function loadSidebarFiles() {
     const sidebar = document.getElementById('left-sidebar-content');
@@ -534,6 +534,7 @@ async function loadSidebarFiles() {
     // Track new files
     let newReports = new Set();
     let newCodeFiles = {};
+    let newSessions = new Set();
     if (knownSidebarFiles.reports.size > 0) {
         for (const r of reports.map(r => r.path || r)) {
             if (!knownSidebarFiles.reports.has(r)) newReports.add(r);
@@ -542,6 +543,9 @@ async function loadSidebarFiles() {
     if (Object.keys(knownSidebarFiles.code).length > 0) {
         for (const session of sessions) {
             newCodeFiles[session.session] = new Set();
+            if (!knownSidebarFiles.sessions.has(session.session)) {
+                newSessions.add(session.session);
+            }
             for (const file of session.files.map(f => f.path || f)) {
                 if (!knownSidebarFiles.code[session.session] || !knownSidebarFiles.code[session.session].has(file)) {
                     newCodeFiles[session.session].add(file);
@@ -550,9 +554,10 @@ async function loadSidebarFiles() {
         }
     }
 
-    // Render reports
-    html = '<div class="sidebar-sections-flex">';
-    html += '<div class="sidebar-section sidebar-section-half sidebar-section-reports"><h4><i class="fas fa-file-alt"></i> Reports</h4>';
+    // Render reports section
+    let html = '<div class="sidebar-sections-flex">';
+    html += '<div class="sidebar-section sidebar-section-half sidebar-section-reports">';
+    html += '<h4><i class="fas fa-file-alt"></i> Reports</h4>';
     if (reports.length === 0) {
         html += '<div class="sidebar-empty">No reports found.</div>';
     } else {
@@ -562,7 +567,7 @@ async function loadSidebarFiles() {
             const isNew = newReports.has(path);
             html += `
               <div class="sidebar-card">
-                <div class="sidebar-card-icon"><i class="fas fa-file"></i></div>
+                <div class="sidebar-card-icon"><i class="fas fa-file-alt"></i></div>
                 <div class="sidebar-card-content">
                   <a href="/memory/${path}" target="_blank">${path.split('/').pop()}</a>
                   ${isNew ? '<span class="file-badge-new">NEW</span>' : ''}
@@ -574,19 +579,31 @@ async function loadSidebarFiles() {
     }
     html += '</div>';
 
-    // Render code outputs with enhanced file viewing
-    html += '<div class="sidebar-section sidebar-section-half sidebar-section-code"><h4><i class="fas fa-code"></i> Generated Files</h4>';
+    // Render code outputs section with card-based layout
+    html += '<div class="sidebar-section sidebar-section-half sidebar-section-code">';
+    html += '<h4><i class="fas fa-code"></i> Generated Files</h4>';
     if (sessions.length === 0) {
         html += '<div class="sidebar-empty">No generated files found.</div>';
     } else {
+        html += '<div class="sidebar-card-grid">';
         for (const session of sessions) {
             const sessionDate = new Date(Math.max(...session.files.map(f => f.mtime * 1000))).toLocaleDateString();
-            html += `<div class="sidebar-session">
-                <div class="sidebar-session-title">
-                    <i class="fas fa-folder"></i> Session ${session.session}
-                    <small style="color: #94a3b8; font-weight: normal;">(${sessionDate})</small>
+            const isNewSession = newSessions.has(session.session);
+            const hasNewFiles = newCodeFiles[session.session] && newCodeFiles[session.session].size > 0;
+            
+            html += `<div class="sidebar-card sidebar-card-folder" data-session="${session.session}">
+                <div class="sidebar-card-icon">
+                    <i class="fas fa-folder${isNewSession ? '-plus' : ''}"></i>
+                    ${isNewSession ? '<span class="folder-badge-new">NEW</span>' : ''}
                 </div>
-                <ul class="sidebar-list">`;
+                <div class="sidebar-card-content">
+                    <div class="folder-header" onclick="toggleFolder('${session.session}')">
+                        <span class="folder-title">Session ${session.session}</span>
+                        <span class="folder-date">${sessionDate}</span>
+                        <i class="fas fa-chevron-down folder-toggle" id="toggle-${session.session}"></i>
+                    </div>
+                    <div class="folder-files" id="files-${session.session}" style="display: none;">
+                        <div class="folder-files-grid">`;
             
             for (const file of session.files) {
                 const path = file.path || file;
@@ -594,17 +611,25 @@ async function loadSidebarFiles() {
                 const fileExt = path.split('.').pop().toLowerCase();
                 const iconClass = getFileIcon(fileExt);
                 
-                html += `<li class="sidebar-item">
-                    <i class="${iconClass}"></i> 
-                    <a href="/media/generated/${session.session}/${path}" target="_blank" title="View ${path}">${path}</a>
-                    ${isNew ? '<span class="file-badge-new">NEW</span>' : ''}
-                    <button class="file-preview-btn" onclick="previewFile('${session.session}', '${path}')" title="Preview ${path}">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                </li>`;
+                html += `<div class="folder-file-item">
+                    <div class="folder-file-icon">
+                        <i class="${iconClass}"></i>
+                        ${isNew ? '<span class="file-badge-new">NEW</span>' : ''}
+                    </div>
+                    <div class="folder-file-content">
+                        <a href="/media/generated/${session.session}/${path}" target="_blank" title="View ${path}">${path}</a>
+                        <button class="file-preview-btn" onclick="previewFile('${session.session}', '${path}')" title="Preview ${path}">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>`;
             }
-            html += '</ul></div>';
+            
+            html += `</div></div>
+                </div>
+            </div>`;
         }
+        html += '</div>';
     }
     html += '</div>';
     html += '</div>';
@@ -614,8 +639,10 @@ async function loadSidebarFiles() {
     // Update known files for next refresh
     knownSidebarFiles.reports = new Set(reports.map(r => r.path || r));
     knownSidebarFiles.code = {};
+    knownSidebarFiles.sessions = new Set();
     for (const session of sessions) {
         knownSidebarFiles.code[session.session] = new Set(session.files.map(f => f.path || f));
+        knownSidebarFiles.sessions.add(session.session);
     }
 }
 
@@ -697,6 +724,29 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// Initialize knownSidebarFiles if not exists
+if (typeof knownSidebarFiles === 'undefined') {
+    knownSidebarFiles = {
+        reports: new Set(),
+        code: {},
+        sessions: new Set()
+    };
+}
+
+// Toggle folder function
+function toggleFolder(sessionId) {
+    const filesDiv = document.getElementById(`files-${sessionId}`);
+    const toggleIcon = document.getElementById(`toggle-${sessionId}`);
+    
+    if (filesDiv.style.display === 'none') {
+        filesDiv.style.display = 'block';
+        toggleIcon.className = 'fas fa-chevron-up folder-toggle';
+    } else {
+        filesDiv.style.display = 'none';
+        toggleIcon.className = 'fas fa-chevron-down folder-toggle';
+    }
 }
 
 // Initialize the chat application when the DOM is loaded

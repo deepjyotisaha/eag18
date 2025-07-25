@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Folder Cards Layout</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Import the main styles */
+        @import url('frontend/style.css');
+        
+        body {
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        
+        .test-container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(20px);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .test-title {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #1e293b;
+            font-size: 18px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-title">Test Folder Cards Layout</div>
+        
+        <!-- Reports Section -->
+        <div class="sidebar-section sidebar-section-half sidebar-section-reports">
+            <h4><i class="fas fa-file-alt"></i> Reports</h4>
+            <div class="sidebar-card-grid">
+                <div class="sidebar-card">
+                    <div class="sidebar-card-icon"><i class="fas fa-file-alt"></i></div>
+                    <div class="sidebar-card-content">
+                        <a href="#" target="_blank">market_analysis_report.html</a>
+                        <span class="file-badge-new">NEW</span>
+                    </div>
+                </div>
+                <div class="sidebar-card">
+                    <div class="sidebar-card-icon"><i class="fas fa-file-alt"></i></div>
+                    <div class="sidebar-card-content">
+                        <a href="#" target="_blank">financial_summary.pdf</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Code Files Section -->
+        <div class="sidebar-section sidebar-section-half sidebar-section-code">
+            <h4><i class="fas fa-code"></i> Generated Files</h4>
+            <div class="sidebar-card-grid">
+                <!-- New Session -->
+                <div class="sidebar-card sidebar-card-folder" data-session="12345">
+                    <div class="sidebar-card-icon">
+                        <i class="fas fa-folder-plus"></i>
+                        <span class="folder-badge-new">NEW</span>
+                    </div>
+                    <div class="sidebar-card-content">
+                        <div class="folder-header" onclick="toggleFolder('12345')">
+                            <span class="folder-title">Session 12345</span>
+                            <span class="folder-date">12/15/2024</span>
+                            <i class="fas fa-chevron-down folder-toggle" id="toggle-12345"></i>
+                        </div>
+                        <div class="folder-files" id="files-12345" style="display: none;">
+                            <div class="folder-files-grid">
+                                <div class="folder-file-item">
+                                    <div class="folder-file-icon">
+                                        <i class="fas fa-file-code"></i>
+                                        <span class="file-badge-new">NEW</span>
+                                    </div>
+                                    <div class="folder-file-content">
+                                        <a href="#" target="_blank" title="View index.html">index.html</a>
+                                        <button class="file-preview-btn" onclick="alert('Preview index.html')" title="Preview index.html">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="folder-file-item">
+                                    <div class="folder-file-icon">
+                                        <i class="fas fa-file-code"></i>
+                                    </div>
+                                    <div class="folder-file-content">
+                                        <a href="#" target="_blank" title="View style.css">style.css</a>
+                                        <button class="file-preview-btn" onclick="alert('Preview style.css')" title="Preview style.css">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="folder-file-item">
+                                    <div class="folder-file-icon">
+                                        <i class="fas fa-file-code"></i>
+                                        <span class="file-badge-new">NEW</span>
+                                    </div>
+                                    <div class="folder-file-content">
+                                        <a href="#" target="_blank" title="View script.js">script.js</a>
+                                        <button class="file-preview-btn" onclick="alert('Preview script.js')" title="Preview script.js">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Existing Session -->
+                <div class="sidebar-card sidebar-card-folder" data-session="12344">
+                    <div class="sidebar-card-icon">
+                        <i class="fas fa-folder"></i>
+                    </div>
+                    <div class="sidebar-card-content">
+                        <div class="folder-header" onclick="toggleFolder('12344')">
+                            <span class="folder-title">Session 12344</span>
+                            <span class="folder-date">12/14/2024</span>
+                            <i class="fas fa-chevron-down folder-toggle" id="toggle-12344"></i>
+                        </div>
+                        <div class="folder-files" id="files-12344" style="display: none;">
+                            <div class="folder-files-grid">
+                                <div class="folder-file-item">
+                                    <div class="folder-file-icon">
+                                        <i class="fas fa-file-code"></i>
+                                    </div>
+                                    <div class="folder-file-content">
+                                        <a href="#" target="_blank" title="View app.py">app.py</a>
+                                        <button class="file-preview-btn" onclick="alert('Preview app.py')" title="Preview app.py">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="folder-file-item">
+                                    <div class="folder-file-icon">
+                                        <i class="fas fa-file-code"></i>
+                                    </div>
+                                    <div class="folder-file-content">
+                                        <a href="#" target="_blank" title="View config.json">config.json</a>
+                                        <button class="file-preview-btn" onclick="alert('Preview config.json')" title="Preview config.json">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Toggle folder function
+        function toggleFolder(sessionId) {
+            const filesDiv = document.getElementById(`files-${sessionId}`);
+            const toggleIcon = document.getElementById(`toggle-${sessionId}`);
+            
+            if (filesDiv.style.display === 'none') {
+                filesDiv.style.display = 'block';
+                toggleIcon.className = 'fas fa-chevron-up folder-toggle';
+            } else {
+                filesDiv.style.display = 'none';
+                toggleIcon.className = 'fas fa-chevron-down folder-toggle';
+            }
+        }
+    </script>
+</body>
+</html> 
