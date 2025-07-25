@@ -263,11 +263,15 @@ class ChatApp {
 
         if (status.status === 'starting') {
             html = `
-                <div style="padding: 14px 8px; background: #fef9c3; border-radius: 7px; margin: 8px 0; font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif;">
-                    <h4 style="margin: 0 0 8px 0; color: #b45309; font-size: 15px; font-weight: 600;">
-                        <i class="fas fa-hourglass-start"></i> Agent is starting...
-                    </h4>
-                    <p style="margin:0; font-size:13px; color:#92400e;">Preparing agent and planning steps...</p>
+                <div class="dag-node running" style="display:flex;align-items:center;gap:10px;padding:8px 12px;margin-bottom:8px;">
+                    <span style="font-size:15px;flex-shrink:0;">🔄</span>
+                    <div style="flex:1;min-width:0;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span class="dag-agent-name" style="font-weight:600;font-size:13px;color:#0f172a;letter-spacing:0.01em;">Agent</span>
+                            <span class="dag-status-pill" style="display:inline-block; min-width:60px; padding:2px 10px; border-radius:12px; font-size:11px; font-weight:600; background:#e0f2fe; color:#2563eb; margin-left:8px; vertical-align:middle; letter-spacing:0.02em;">Planning</span>
+                        </div>
+                        <div class="dag-desc" style="font-size:12px;color:#64748b;margin-top:2px;line-height:1.4;">Preparing agent and planning steps...</div>
+                    </div>
                 </div>
             `;
         } else if (status.plan && status.plan.length > 0) {
