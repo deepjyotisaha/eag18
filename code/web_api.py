@@ -240,9 +240,19 @@ def ask():
         # Run the agent asynchronously
         answer = run_in_loop(agent_responds(question, uploaded_files, file_manifest))
 
+        # --- NEW: Add structured analysis results for chat UI ---
+        from agentLoop.output_analyzer import analyze_results_web
+        with context_lock:
+            context = current_execution_context
+        if context is not None:
+            analysis = analyze_results_web(context)
+        else:
+            analysis = {"error": "No execution context available"}
+
         return jsonify({
             'response': answer,
-            'status': 'success'
+            'status': 'success',
+            'analysis': analysis
         })
 
     except Exception as e:

@@ -226,6 +226,62 @@ class OutputAnalyzer:
         # 4. Auto-extract HTML report if available
         self.extract_and_save_html_report()
 
+    def get_results_data(self):
+            """Return comprehensive results analysis as a dictionary (for web/chat UI)"""
+            if not self.context:
+                return {"error": "No execution context available"}
+
+            summary = self.context.get_execution_summary()
+            steps = []
+            for node_id in self.graph.nodes:
+                if node_id == "ROOT":
+                    continue
+                node_data = self.graph.nodes[node_id]
+                if node_data.get('output'):
+                    output = node_data['output']
+                    if isinstance(output, dict):
+                        if 'output' in output and isinstance(output['output'], dict):
+                            keys = list(output['output'].keys())
+                        else:
+                            keys = list(output.keys())
+                    else:
+                        keys = ['raw_text']
+                    steps.append({
+                        "step": node_id,
+                        "agent": node_data.get('agent', 'Unknown'),
+                        "status": node_data['status'],
+                        "output_keys": keys
+                    })
+
+            cost_breakdown = summary.get("cost_breakdown", {})
+            cost_details = [
+                {
+                    "step": step,
+                    "cost": data["cost"],
+                    "input_tokens": data["input_tokens"],
+                    "output_tokens": data["output_tokens"]
+                }
+                for step, data in cost_breakdown.items()
+            ]
+
+            return {
+                "execution_summary": {
+                    "completed_steps": summary['completed_steps'],
+                    "total_steps": summary['total_steps'],
+                    "total_cost": summary['total_cost'],
+                    "total_input_tokens": summary['total_input_tokens'],
+                    "total_output_tokens": summary['total_output_tokens'],
+                    "failed_steps": summary['failed_steps'],
+                },
+                "steps": steps,
+                "session": {
+                    "session_id": self.graph.graph['session_id'],
+                    "created_at": self.graph.graph['created_at'],
+                    "session_file": f"memory/session_summaries_index/{self.graph.graph['created_at'][:10].replace('-', '/')}/session_{self.graph.graph['session_id']}.json"
+                },
+                "cost_breakdown": cost_details
+            }
+
     def extract_and_save_html_report(self):
         """Extract HTML report from session and save as proper HTML file"""
         try:
@@ -1152,6 +1208,15 @@ def analyze_results(context):
     """Analyze results directly from NetworkX graph"""
     analyzer = OutputAnalyzer(context)
     analyzer.show_results()
+
+# --- NEW CODE BELOW ---
+
+def analyze_results_web(context):
+    """Return the results as a dictionary for web/chat UI instead of printing to console."""
+    analyzer = OutputAnalyzer(context)
+    analyzer.extract_and_save_html_report()
+    return analyzer.get_results_data()
+   
 
 # Standalone function for external use
 def extract_html_report_from_session_file(session_file_path):
