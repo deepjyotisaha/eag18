@@ -65,8 +65,11 @@ class ChatApp {
         this.messageInput.value = '';
         this.autoResizeTextarea();
 
-        // Show typing indicator
-        const typingIndicator = this.showTypingIndicator();
+        // Show agent processing placeholder with timer
+        const agentProcessingDiv = this.showAgentProcessingPlaceholder();
+
+        // Show typing indicator (hidden until real response)
+        // const typingIndicator = this.showTypingIndicator();
 
         // Disable input during processing
         this.setProcessingState(true);
@@ -76,10 +79,11 @@ class ChatApp {
 
         try {
             const response = await this.callAPI(message);
-            this.hideTypingIndicator(typingIndicator);
+            // Remove processing placeholder and show real response
+            this.removeAgentProcessingPlaceholder(agentProcessingDiv);
             this.addMessage(response, 'agent');
         } catch (error) {
-            this.hideTypingIndicator(typingIndicator);
+            this.removeAgentProcessingPlaceholder(agentProcessingDiv);
             this.addMessage('I apologize, but I encountered an error processing your request. Please try again.', 'agent');
             console.error('API Error:', error);
         } finally {
@@ -331,6 +335,38 @@ class ChatApp {
             html = `<div style="padding: 12px; color: #64748b; font-size: 13px;">No plan available.</div>`;
         }
         sidebar.innerHTML = html;
+    }
+
+    showAgentProcessingPlaceholder() {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message agent-message agent-processing-placeholder';
+        const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        messageDiv.innerHTML = `
+            <div class="message-avatar">
+                <i class="fas fa-brain"></i>
+            </div>
+            <div class="message-content">
+                <div class="message-text" style="display:flex;align-items:center;gap:10px;">
+                    <span class="processing-timer" style="display:inline-block;width:18px;height:18px;vertical-align:middle;">
+                        <svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="7" stroke="#3b82f6" stroke-width="2" fill="none" stroke-dasharray="44" stroke-dashoffset="0"><animateTransform attributeName="transform" type="rotate" from="0 9 9" to="360 9 9" dur="1s" repeatCount="indefinite"/></circle></svg>
+                    </span>
+                    <span>Agent is processing your request...</span>
+                </div>
+                <div class="message-text" style="font-size:12px;color:#2563eb;margin-top:4px;background:#f1f5f9;border-radius:6px;padding:6px 10px;display:inline-block;max-width:90%;">
+                    <i class="fas fa-info-circle" style="margin-right:5px;"></i>View live agent plan and progress in the <b>right pane</b>.
+                </div>
+                <div class="message-time">${timestamp}</div>
+            </div>
+        `;
+        this.chatMessages.appendChild(messageDiv);
+        this.scrollToBottom();
+        return messageDiv;
+    }
+
+    removeAgentProcessingPlaceholder(placeholderDiv) {
+        if (placeholderDiv && placeholderDiv.parentNode) {
+            placeholderDiv.remove();
+        }
     }
 }
 

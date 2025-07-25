@@ -1,0 +1,259 @@
+{
+  "directed": true,
+  "multigraph": false,
+  "graph": {
+    "session_id": "53442431",
+    "original_query": "Conduct comprehensive market research on electric vehicle trends and create a detailed analysis report with visualizations",
+    "file_manifest": [],
+    "created_at": "2025-07-25T11:20:31.459923",
+    "status": "running",
+    "output_chain": {},
+    "validation_results": {
+      "is_valid": true,
+      "is_dag": true,
+      "cycles": [],
+      "disconnected_components": [],
+      "orphaned_nodes": [],
+      "root_nodes": [],
+      "leaf_nodes": [
+        "T009"
+      ],
+      "warnings": [],
+      "errors": []
+    }
+  },
+  "nodes": [
+    {
+      "description": "Initial Query",
+      "agent": "System",
+      "status": "completed",
+      "id": "ROOT"
+    },
+    {
+      "id": "T001",
+      "description": "Gather data on current electric vehicle market trends from various online sources.",
+      "agent": "RetrieverAgent",
+      "agent_prompt": "Retrieve comprehensive data on current electric vehicle market trends, including sales figures, market share, growth rates, and regional variations. Focus on reports from reputable market research firms, news articles from reliable sources, and publications from industry associations.",
+      "reads": [],
+      "writes": [
+        "T001"
+      ],
+      "status": "running",
+      "output": null,
+      "error": null,
+      "cost": 0.0,
+      "start_time": "2025-07-25T11:20:31.478552",
+      "end_time": null,
+      "execution_time": 0.0
+    },
+    {
+      "id": "T002",
+      "description": "Research consumer preferences and adoption patterns related to electric vehicles.",
+      "agent": "RetrieverAgent",
+      "agent_prompt": "Investigate consumer preferences regarding electric vehicles, including factors influencing purchase decisions such as range, price, charging infrastructure, and environmental concerns. Analyze consumer surveys, feedback from EV owners, and reports on adoption rates in different demographics.",
+      "reads": [],
+      "writes": [
+        "T002"
+      ],
+      "status": "pending",
+      "output": null,
+      "error": null,
+      "cost": 0.0,
+      "start_time": null,
+      "end_time": null,
+      "execution_time": 0.0
+    },
+    {
+      "id": "T003",
+      "description": "Investigate technological advancements in electric vehicle technology, including battery technology, charging infrastructure, and autonomous driving features.",
+      "agent": "RetrieverAgent",
+      "agent_prompt": "Gather information on the latest technological advancements in electric vehicle technology. Focus on improvements in battery energy density, charging speeds, the development of charging infrastructure, and the integration of autonomous driving features. Consult technical journals, industry publications, and reports from research institutions.",
+      "reads": [],
+      "writes": [
+        "T003"
+      ],
+      "status": "pending",
+      "output": null,
+      "error": null,
+      "cost": 0.0,
+      "start_time": null,
+      "end_time": null,
+      "execution_time": 0.0
+    },
+    {
+      "id": "T004",
+      "description": "Analyze government policies and incentives affecting the electric vehicle market, including subsidies, tax credits, and emission regulations.",
+      "agent": "RetrieverAgent",
+      "agent_prompt": "Research government policies and incentives designed to promote the adoption of electric vehicles. Analyze the impact of subsidies, tax credits, emission regulations, and other policy measures on the EV market. Gather information from government websites, policy reports, and legal databases.",
+      "reads": [],
+      "writes": [
+        "T004"
+      ],
+      "status": "pending",
+      "output": null,
+      "error": null,
+      "cost": 0.0,
+      "start_time": null,
+      "end_time": null,
+      "execution_time": 0.0
+    },
+    {
+      "id": "T005",
+      "description": "Synthesize and analyze the data collected from T001, T002, T003, and T004 to identify key trends and insights in the electric vehicle market.",
+      "agent": "ThinkerAgent",
+      "agent_prompt": "Synthesize the data collected on market trends, consumer preferences, technological advancements, and government policies to identify key trends and insights in the electric vehicle market. Analyze the relationships between these factors and their impact on the overall market dynamics. Identify emerging opportunities and potential challenges for EV manufacturers and stakeholders.",
+      "reads": [
+        "T001",
+        "T002",
+        "T003",
+        "T004"
+      ],
+      "writes": [
+        "T005"
+      ],
+      "status": "pending",
+      "output": null,
+      "error": null,
+      "cost": 0.0,
+      "start_time": null,
+      "end_time": null,
+      "execution_time": 0.0
+    },
+    {
+      "id": "T006",
+      "description": "Create a detailed analysis report summarizing the findings from T005, including an executive summary, market overview, trend analysis, and future outlook.",
+      "agent": "FormatterAgent",
+      "agent_prompt": "Based on the synthesized data and insights from T005, create a detailed analysis report on the electric vehicle market. The report should include an executive summary, a market overview, an in-depth trend analysis, and a future outlook. Ensure the report is well-structured, clearly written, and visually appealing, with appropriate headings, subheadings, and formatting. Pass data from T005.",
+      "reads": [
+        "T005"
+      ],
+      "writes": [
+        "T006"
+      ],
+      "status": "pending",
+      "output": null,
+      "error": null,
+      "cost": 0.0,
+      "start_time": null,
+      "end_time": null,
+      "execution_time": 0.0
+    },
+    {
+      "id": "T007",
+      "description": "Create visualizations of sales data and market share trends for the EV market, for inclusion in T006.",
+      "agent": "CoderAgent",
+      "agent_prompt": "Generate Python code using Matplotlib and Seaborn to create visualizations of sales data and market share trends for the EV market. Create line charts showing sales growth over time, bar charts comparing market share of different EV manufacturers, and pie charts illustrating regional variations in EV adoption. Ensure the visualizations are clear, informative, and visually appealing. Save the visualizations as PNG image files, named sales_trends.png, market_share.png and regional_adoption.png. The data to be used for this visualization will be available in the data provided from T005. Placeholder in report where these visualization needs to go, so next CoderAgent can update the report.",
+      "reads": [
+        "T005"
+      ],
+      "writes": [
+        "T007"
+      ],
+      "status": "pending",
+      "output": null,
+      "error": null,
+      "cost": 0.0,
+      "start_time": null,
+      "end_time": null,
+      "execution_time": 0.0
+    },
+    {
+      "id": "T008",
+      "description": "Create visualizations of technological advancements in EV technology, for inclusion in T006.",
+      "agent": "CoderAgent",
+      "agent_prompt": "Generate Python code using Matplotlib and Seaborn to create visualizations of technological advancements in EV technology. Create scatter plots showing the relationship between battery energy density and charging speeds, bar charts comparing the range of different EV models, and heatmaps illustrating the adoption of autonomous driving features. Ensure the visualizations are clear, informative, and visually appealing. Save the visualizations as PNG image files, named battery_tech.png, ev_range.png and autonomous_features.png. The data to be used for this visualization will be available in the data provided from T005. Placeholder in report where these visualization needs to go, so next CoderAgent can update the report.",
+      "reads": [
+        "T005"
+      ],
+      "writes": [
+        "T008"
+      ],
+      "status": "pending",
+      "output": null,
+      "error": null,
+      "cost": 0.0,
+      "start_time": null,
+      "end_time": null,
+      "execution_time": 0.0
+    },
+    {
+      "id": "T009",
+      "description": "Integrate the visualizations from T007 and T008 into the analysis report created in T006 and finalize the report.",
+      "agent": "FormatterAgent",
+      "agent_prompt": "Integrate the visualizations generated in T007 and T008 into the analysis report created in T006. Insert the visualizations at appropriate locations within the report, ensuring they are properly labeled and captioned. Finalize the report by adding a conclusion and recommendations. Pass all the data from T006 and tell FormatterAgent to include the visualization images created in T007 and T008.",
+      "reads": [
+        "T006",
+        "T007",
+        "T008"
+      ],
+      "writes": [
+        "T009"
+      ],
+      "status": "pending",
+      "output": null,
+      "error": null,
+      "cost": 0.0,
+      "start_time": null,
+      "end_time": null,
+      "execution_time": 0.0
+    }
+  ],
+  "links": [
+    {
+      "source": "ROOT",
+      "target": "T001"
+    },
+    {
+      "source": "ROOT",
+      "target": "T002"
+    },
+    {
+      "source": "ROOT",
+      "target": "T003"
+    },
+    {
+      "source": "ROOT",
+      "target": "T004"
+    },
+    {
+      "source": "T001",
+      "target": "T005"
+    },
+    {
+      "source": "T002",
+      "target": "T005"
+    },
+    {
+      "source": "T003",
+      "target": "T005"
+    },
+    {
+      "source": "T004",
+      "target": "T005"
+    },
+    {
+      "source": "T005",
+      "target": "T006"
+    },
+    {
+      "source": "T005",
+      "target": "T007"
+    },
+    {
+      "source": "T005",
+      "target": "T008"
+    },
+    {
+      "source": "T006",
+      "target": "T009"
+    },
+    {
+      "source": "T007",
+      "target": "T009"
+    },
+    {
+      "source": "T008",
+      "target": "T009"
+    }
+  ]
+}
