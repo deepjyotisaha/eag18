@@ -76,46 +76,150 @@ async def initialize_agent_system():
         initialization_complete = False
         return False
 
+# --- New global variables for real-time status updates ---
+current_execution_context = None
+context_lock = threading.Lock()
+current_session_id = None
+current_agent_state = "idle"
+# ---
+
 async def agent_responds(query, uploaded_files=None, file_manifest=None):
     """
     Wrapper function to invoke the agent system
     This is a replica function that doesn't disturb existing agent code
     """
-    global multi_mcp, agent_loop, initialization_complete
-    
-    # Check if initialization was completed
+    global multi_mcp, agent_loop, initialization_complete, current_execution_context, current_session_id, current_agent_state
+
     if not initialization_complete or agent_loop is None:
         return "Agent system is not initialized. Please restart the server."
-    
+
     try:
-        # Prepare file inputs (empty if no files)
         if uploaded_files is None:
             uploaded_files = []
         if file_manifest is None:
             file_manifest = []
-        
-        # Run the agent system
+
+        import time
+        current_session_id = f"session_{int(time.time())}"
+
+        def store_context(context):
+            global current_execution_context, current_agent_state
+            with context_lock:
+                current_execution_context = context
+                current_agent_state = "running"
+
         print(f"🔄 Processing query: {query}")
-        execution_context = await agent_loop.run(query, file_manifest, uploaded_files)
-        
-        # Extract results from execution context
+        execution_context = await agent_loop.run_with_status_callback(
+            query, file_manifest, uploaded_files, store_context
+        )
+
         if hasattr(execution_context, 'get_final_output'):
             final_output = execution_context.get_final_output()
         else:
-            # Fallback: analyze results and return summary
             final_output = "Task completed successfully. Check the execution context for detailed results."
-        
+
+        with context_lock:
+            current_agent_state = "completed"
+
         return final_output
-        
+
     except Exception as e:
         error_msg = f"Error processing query: {str(e)}"
         print(f"❌ {error_msg}")
         traceback.print_exc()
         return error_msg
 
+def is_agent_busy():
+    """Check if an agent is currently running"""
+    global current_execution_context
+    with context_lock:
+        if current_execution_context is None:
+            return False
+        return not current_execution_context.all_done()
+
+def get_agent_status():
+    """Get current agent execution status"""
+    global current_execution_context, current_session_id, current_agent_state
+    
+    with context_lock:
+        if current_agent_state == "starting":
+            return {
+                'status': 'starting',
+                'message': 'Agent is starting...'
+            }
+        if current_execution_context is None:
+            return {
+                'status': 'idle',
+                'message': 'No agent execution in progress'
+            }
+        
+        context = current_execution_context
+        
+        # Get all nodes except ROOT
+        nodes = [node_id for node_id in context.plan_graph.nodes if node_id != "ROOT"]
+        total_steps = len(nodes)
+        
+        # Count completed and failed steps
+        completed_steps = sum(1 for node_id in nodes 
+                            if context.plan_graph.nodes[node_id].get('status') == 'completed')
+        failed_steps = sum(1 for node_id in nodes 
+                          if context.plan_graph.nodes[node_id].get('status') == 'failed')
+        
+        # Calculate percentage
+        percentage = int((completed_steps / total_steps * 100) if total_steps > 0 else 0)
+        
+        # Get current step (first running step)
+        current_step = None
+        for node_id in nodes:
+            if context.plan_graph.nodes[node_id].get('status') == 'running':
+                node_data = context.plan_graph.nodes[node_id]
+                current_step = {
+                    'id': node_id,
+                    'description': node_data.get('description', 'Unknown step'),
+                    'agent': node_data.get('agent', 'Unknown agent'),
+                    'status': 'running'
+                }
+                break
+        
+        print(f"Current agent state: {current_agent_state}")
+        print(f"Plan graph: {context.plan_graph.nodes}")
+        # Calculate execution time
+        execution_time = 0
+        if hasattr(context, 'start_time'):
+            import time
+            execution_time = int(time.time() - context.start_time)
+        
+        if context.all_done():
+            return {
+                'status': 'completed',
+                'session_id': current_session_id,
+                'progress': {
+                    'completed': completed_steps,
+                    'total': total_steps,
+                    'percentage': percentage
+                },
+                'completed_steps': completed_steps,
+                'failed_steps': failed_steps,
+                'execution_time': execution_time,
+                'current_step': current_step
+            }
+        else:
+            return {
+                'status': 'running',
+                'session_id': current_session_id,
+                'progress': {
+                    'completed': completed_steps,
+                    'total': total_steps,
+                    'percentage': percentage
+                },
+                'current_step': current_step,
+                'execution_time': execution_time
+            }
+
 @app.route('/ask', methods=['POST'])
 def ask():
     """Handle chat requests from the frontend"""
+    global current_agent_state
     try:
         data = request.get_json(silent=True)
         if not data or 'question' not in data:
@@ -127,6 +231,9 @@ def ask():
         
         print(f" Received question: {question}")
         
+        with context_lock:
+            current_agent_state = "starting"
+
         # Run the agent asynchronously
         answer = run_in_loop(agent_responds(question, uploaded_files, file_manifest))
         
@@ -141,6 +248,18 @@ def ask():
         return jsonify({
             'response': error_msg,
             'status': 'error'
+        }), 500
+
+@app.route('/status', methods=['GET'])
+def get_status():
+    """Get current agent execution status"""
+    try:
+        status = get_agent_status()
+        return jsonify(status)
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Error getting status: {str(e)}'
         }), 500
 
 @app.route('/health', methods=['GET'])

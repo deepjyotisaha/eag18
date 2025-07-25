@@ -111,6 +111,69 @@ Profile each file separately and return details."""
         await self._execute_dag(context)
         return context
 
+    async def run_with_status_callback(self, query, file_manifest, uploaded_files, status_callback=None):
+        # Phase 1: File Profiling (if files exist)
+        file_profiles = {}
+        if uploaded_files:
+            file_list_text = "\n".join([f"- File {i+1}: {Path(f).name} (full path: {f})"
+                                       for i, f in enumerate(uploaded_files)])
+            grounded_instruction = f"""Profile and summarize each file's structure, columns, content type.
+
+IMPORTANT: Use these EXACT file names in your response:
+{file_list_text}
+
+Profile each file separately and return details."""
+            await self._show_timer_animation(30, f"🤖 DistillerAgent Waiting before calling Gemini")
+            file_result = await self.agent_runner.run_agent(
+                "DistillerAgent",
+                {
+                    "task": "profile_files",
+                    "files": uploaded_files,
+                    "instruction": grounded_instruction,
+                    "writes": ["file_profiles"]
+                }
+            )
+            if file_result["success"]:
+                file_profiles = file_result["output"]
+
+        # Phase 2: Planning
+        await self._show_timer_animation(30, f"🤖 PlannerAgent Waiting before calling Gemini")
+        plan_result = await self.agent_runner.run_agent(
+            "PlannerAgent",
+            {
+                "original_query": query,
+                "planning_strategy": self.strategy,
+                "file_manifest": file_manifest,
+                "file_profiles": file_profiles
+            }
+        )
+        if not plan_result["success"]:
+            raise RuntimeError(f"Planning failed: {plan_result['error']}")
+        if 'plan_graph' not in plan_result['output']:
+            raise RuntimeError(f"PlannerAgent output missing 'plan_graph' key")
+        plan_graph = plan_result["output"]["plan_graph"]
+
+        # Phase 3: Create ExecutionContextManager
+        context = ExecutionContextManager(
+            plan_graph,
+            session_id=None,
+            original_query=query,
+            file_manifest=file_manifest
+        )
+        context.set_multi_mcp(self.multi_mcp)
+        if file_profiles:
+            context.plan_graph.graph['output_chain']['file_profiles'] = file_profiles
+        for file_info in file_manifest:
+            context.plan_graph.graph['output_chain'][file_info['name']] = file_info['path']
+
+        # Call status_callback with context BEFORE execution starts
+        if status_callback:
+            status_callback(context)
+
+        # Phase 4: Execute with simple output chaining
+        await self._execute_dag(context)
+        return context
+
     async def _execute_dag(self, context):
         """Execute DAG with simple output chaining"""
         visualizer = ExecutionVisualizer(context)

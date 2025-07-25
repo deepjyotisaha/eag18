@@ -25,6 +25,9 @@ class ExecutionContextManager:
         self.plan_graph.graph['status'] = 'running'
         self.plan_graph.graph['output_chain'] = {}  # SIMPLE: Store raw outputs
         
+        # Add start time for status tracking
+        self.start_time = time.time()
+        
         # Add ROOT node
         self.plan_graph.add_node("ROOT", description="Initial Query", agent="System", status='completed')
 

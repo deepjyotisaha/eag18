@@ -6,6 +6,7 @@ class ChatApp {
         this.messageInput = document.getElementById('message-input');
         this.sendBtn = document.getElementById('send-btn');
         this.isProcessing = false;
+        this.statusPollingInterval = null;
         
         this.initializeEventListeners();
         this.autoResizeTextarea();
@@ -70,6 +71,9 @@ class ChatApp {
         // Disable input during processing
         this.setProcessingState(true);
 
+        // Start polling for status updates
+        this.startStatusPolling();
+
         try {
             const response = await this.callAPI(message);
             this.hideTypingIndicator(typingIndicator);
@@ -80,6 +84,8 @@ class ChatApp {
             console.error('API Error:', error);
         } finally {
             this.setProcessingState(false);
+            // Stop polling after a delay to allow final status update
+            setTimeout(() => this.stopStatusPolling(), 3000);
         }
     }
 
@@ -224,6 +230,88 @@ class ChatApp {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+    }
+
+    startStatusPolling() {
+        if (this.statusPollingInterval) return;
+        this.statusPollingInterval = setInterval(() => this.fetchAgentStatus(), 1000);
+        this.fetchAgentStatus(); // Initial fetch
+    }
+
+    stopStatusPolling() {
+        if (this.statusPollingInterval) {
+            clearInterval(this.statusPollingInterval);
+            this.statusPollingInterval = null;
+        }
+    }
+
+    async fetchAgentStatus() {
+        try {
+            const response = await fetch('http://127.0.0.1:5000/status');
+            if (!response.ok) throw new Error('Failed to fetch agent status');
+            const status = await response.json();
+            this.updateAgentStatus(status);
+        } catch (e) {
+            // Optionally handle error
+        }
+    }
+
+    updateAgentStatus(status) {
+        console.log(status);
+        const sidebar = document.querySelector('.right-sidebar .sidebar-content');
+        if (!sidebar) return;
+        let html = '';
+
+        if (status.status === 'starting') {
+            html = `
+                <div style="padding: 15px; background: #fef9c3; border-radius: 8px; margin: 10px 0;">
+                    <h4 style="margin: 0 0 10px 0; color: #b45309;">
+                        <i class="fas fa-hourglass-start"></i> Agent is starting...
+                    </h4>
+                    <p>Preparing agent and planning steps...</p>
+                </div>
+            `;
+        } else if (status.plan && status.plan.length > 0) {
+            // Render the plan with step statuses
+            html = `
+                <div style="padding: 10px;">
+                    <h4 style="margin-bottom: 10px;">Plan</h4>
+                    <ul style="list-style: none; padding: 0; margin: 0;">
+                        ${status.plan.map(step => `
+                            <li style="
+                                margin-bottom: 6px;
+                                padding: 6px 8px;
+                                border-radius: 5px;
+                                background: ${step.status === 'completed' ? '#d1fae5' : step.status === 'failed' ? '#fee2e2' : step.status === 'running' ? '#f0f8ff' : '#f3f4f6'};
+                                font-weight: ${step.status === 'running' ? 'bold' : 'normal'};
+                                color: ${step.status === 'failed' ? '#b91c1c' : step.status === 'running' ? '#2563eb' : '#374151'};
+                            ">
+                                <span>
+                                    ${step.status === 'completed' ? '✅' : step.status === 'failed' ? '❌' : step.status === 'running' ? '🔄' : '⏳'}
+                                    <strong>${step.agent}</strong>: ${step.description}
+                                    ${step.status === 'running' ? '<span style="margin-left:8px; color:#2563eb;">(Running)</span>' : ''}
+                                </span>
+                            </li>
+                        `).join('')}
+                    </ul>
+                    <div style="margin-top: 10px;">
+                        <strong>Progress:</strong> ${status.progress.completed}/${status.progress.total} (${status.progress.percentage}%)
+                    </div>
+                    <div>
+                        <strong>Elapsed:</strong> ${status.execution_time}s
+                    </div>
+                </div>
+            `;
+        } else {
+            html = `
+                <div class="placeholder-content">
+                    <i class="fas fa-chart-line"></i>
+                    <p>Execution Analytics</p>
+                    <small>Monitor agent performance, execution flow, and system metrics in real-time</small>
+                </div>
+            `;
+        }
+        sidebar.innerHTML = html;
     }
 }
 
