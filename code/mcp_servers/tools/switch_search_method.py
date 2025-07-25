@@ -18,6 +18,8 @@ SEARCH_ENGINES = [
     "mojeek_playwright"
 ]
 
+CHROME_ENABLED = False  # Set to False to disable browser-based extraction
+
 class RateLimiter:
     def __init__(self, cooldown_seconds=2):
         self.cooldown = timedelta(seconds=cooldown_seconds)
@@ -78,16 +80,24 @@ async def use_duckduckgo_http(query: str) -> List[str]:
         return links
 
 async def use_playwright_search(query: str, engine: str) -> List[str]:
+    if not CHROME_ENABLED:
+        print("⚠️ Chrome/Playwright is disabled by configuration. Skipping browser-based search.")
+        # Optionally, implement an HTTP fallback here if you want
+        print("⚠️ Chrome/Playwright is disabled by configuration. Using HTTP fallback.")
+        if engine == "duck_playwright":
+            return await use_duckduckgo_http(query)
+        # You can add more HTTP fallbacks for other engines here if implemented
+        return [f"[HTTP fallback not implemented for {engine}]"]
+
     await rate_limiter.acquire(engine)
     urls = []
-    async with async_playwright() as p:
-        # Detect server environment via SSH
-        is_server = os.getenv('SSH_CLIENT') is not None or os.getenv('SSH_TTY') is not None
-        headless_mode = is_server
+    # Detect server environment via SSH
+    is_server = os.getenv('SSH_CLIENT') is not None or os.getenv('SSH_TTY') is not None
+    headless_mode = is_server
 
+    async with async_playwright() as p:
         browser = await p.chromium.launch(headless=headless_mode)
         page = await browser.new_page()
-
         try:
             engine_url_map = {
                 "duck_playwright": "https://html.duckduckgo.com/html",

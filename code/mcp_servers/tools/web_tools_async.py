@@ -8,6 +8,8 @@ import trafilatura
 import random
 from pathlib import Path
 
+CHROME_ENABLED = False  # Set to False to disable browser-based extraction
+
 DIFFICULT_WEBSITES_PATH = Path(__file__).parent / "difficult_websites.txt"
 
 def get_random_headers():
@@ -56,8 +58,54 @@ def choose_best_text(visible, main, trafilatura_):
     }[best], best
 
 async def web_tool_playwright(url: str, max_total_wait: int = 15) -> dict:
+    """
+    If CHROME_ENABLED is True, use Playwright/Chromium to fetch and render the page.
+    If CHROME_ENABLED is False, use HTTPX and BeautifulSoup as a fallback (no browser).
+    """
     result = {"url": url}
 
+    if not CHROME_ENABLED:
+        # Fallback: HTTP-only extraction (no JS rendering)
+        import httpx
+        from readability import Document
+        from bs4 import BeautifulSoup
+        import trafilatura
+
+        try:
+            async with httpx.AsyncClient(timeout=max_total_wait, follow_redirects=True) as client:
+                response = await client.get(url)
+                html = response.content.decode("utf-8", errors="replace")
+
+            doc = Document(html)
+            main_html = doc.summary()
+            main_text = BeautifulSoup(main_html, "html.parser").get_text(separator="\n", strip=True)
+            visible_text = BeautifulSoup(html, "html.parser").get_text(separator="\n", strip=True)
+            trafilatura_text = trafilatura.extract(html)
+            best_text, source = choose_best_text(visible_text, main_text, trafilatura_text)
+
+            result.update({
+                "title": doc.short_title(),
+                "html": html,
+                "text": visible_text,
+                "main_text": main_text,
+                "trafilatura_text": trafilatura_text,
+                "best_text": ascii_only(best_text),
+                "best_text_source": source
+            })
+        except Exception as e:
+            result.update({
+                "title": "[error]",
+                "html": "",
+                "text": f"[error: {e}]",
+                "main_text": "[no HTML extracted]",
+                "trafilatura_text": "",
+                "best_text": "[no text]",
+                "best_text_source": "error"
+            })
+        return result
+
+    # If CHROME_ENABLED is True, use Playwright as before
+    from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
     try:
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=False)
@@ -65,7 +113,6 @@ async def web_tool_playwright(url: str, max_total_wait: int = 15) -> dict:
 
             await page.goto(url, wait_until="domcontentloaded", timeout=15000)
 
-            # Wait until the page body has significant content (i.e., text is non-trivial)
             try:
                 await page.wait_for_function(
                     """() => {
@@ -77,7 +124,6 @@ async def web_tool_playwright(url: str, max_total_wait: int = 15) -> dict:
             except Exception as e:
                 print("⚠️ Generic wait failed:", e)
 
-            # Optional light sleep for residual JS rendering
             await asyncio.sleep(5)
 
             try:
@@ -93,7 +139,6 @@ async def web_tool_playwright(url: str, max_total_wait: int = 15) -> dict:
             title = await page.title()
             await browser.close()
 
-            # Run parsing in background to free browser early
             try:
                 main_text = await asyncio.to_thread(lambda: BeautifulSoup(Document(html).summary(), "html.parser").get_text(separator="\n", strip=True))
             except Exception as e:
@@ -130,6 +175,7 @@ async def web_tool_playwright(url: str, max_total_wait: int = 15) -> dict:
         })
 
     except Exception as e:
+        import traceback
         traceback.print_exc()
         result.update({
             "title": "[error]",
