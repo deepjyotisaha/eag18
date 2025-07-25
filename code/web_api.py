@@ -311,24 +311,35 @@ def list_reports():
 
 @app.route('/list-code-outputs', methods=['GET'])
 def list_code_outputs():
-    session_dirs = glob.glob('media/generated/session_*')
+    # Fix: Look for all directories in media/generated, not just session_*
+    session_dirs = glob.glob('media/generated/*')
     sessions = []
     for session_dir in session_dirs:
-        files = []
-        for root, _, filenames in os.walk(session_dir):
-            for fname in filenames:
-                fpath = os.path.join(root, fname)
-                rel_path = os.path.relpath(fpath, session_dir)
-                try:
-                    mtime = os.path.getmtime(fpath)
-                except Exception:
-                    mtime = 0
-                files.append({'path': rel_path, 'mtime': mtime})
-        sessions.append({
-            'session': os.path.basename(session_dir),
-            'files': files
-        })
+        if os.path.isdir(session_dir):
+            files = []
+            for root, _, filenames in os.walk(session_dir):
+                for fname in filenames:
+                    fpath = os.path.join(root, fname)
+                    rel_path = os.path.relpath(fpath, session_dir)
+                    try:
+                        mtime = os.path.getmtime(fpath)
+                    except Exception:
+                        mtime = 0
+                    files.append({'path': rel_path, 'mtime': mtime})
+            sessions.append({
+                'session': os.path.basename(session_dir),
+                'files': files
+            })
     return jsonify({'sessions': sessions})
+
+@app.route('/media/generated/<session_id>/<path:filename>')
+def serve_generated_file(session_id, filename):
+    """Serve files from the generated media directory"""
+    file_path = os.path.join('media', 'generated', session_id, filename)
+    if os.path.exists(file_path):
+        return send_from_directory('media/generated', f'{session_id}/{filename}')
+    else:
+        return jsonify({'error': 'File not found'}), 404
 
 if __name__ == '__main__':
     print(" Starting EAG18 Web API...")

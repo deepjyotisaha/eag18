@@ -519,6 +519,13 @@ async function loadSidebarFiles() {
     // Sort reports by mtime descending
     reports.sort((a, b) => (b.mtime || 0) - (a.mtime || 0));
 
+    // Sort sessions by most recent file mtime
+    sessions.sort((a, b) => {
+        const aMaxMtime = Math.max(...a.files.map(f => f.mtime || 0));
+        const bMaxMtime = Math.max(...b.files.map(f => f.mtime || 0));
+        return bMaxMtime - aMaxMtime;
+    });
+
     // Sort files in each session by mtime descending
     for (const session of sessions) {
         session.files.sort((a, b) => (b.mtime || 0) - (a.mtime || 0));
@@ -567,17 +574,34 @@ async function loadSidebarFiles() {
     }
     html += '</div>';
 
-    // Render code outputs
-    html += '<div class="sidebar-section sidebar-section-half sidebar-section-code"><h4><i class="fas fa-code"></i> Code Outputs</h4>';
+    // Render code outputs with enhanced file viewing
+    html += '<div class="sidebar-section sidebar-section-half sidebar-section-code"><h4><i class="fas fa-code"></i> Generated Files</h4>';
     if (sessions.length === 0) {
-        html += '<div class="sidebar-empty">No code outputs found.</div>';
+        html += '<div class="sidebar-empty">No generated files found.</div>';
     } else {
         for (const session of sessions) {
-            html += `<div class="sidebar-session"><div class="sidebar-session-title"><i class="fas fa-folder"></i> ${session.session}</div><ul class="sidebar-list">`;
+            const sessionDate = new Date(Math.max(...session.files.map(f => f.mtime * 1000))).toLocaleDateString();
+            html += `<div class="sidebar-session">
+                <div class="sidebar-session-title">
+                    <i class="fas fa-folder"></i> Session ${session.session}
+                    <small style="color: #94a3b8; font-weight: normal;">(${sessionDate})</small>
+                </div>
+                <ul class="sidebar-list">`;
+            
             for (const file of session.files) {
                 const path = file.path || file;
                 const isNew = newCodeFiles[session.session] && newCodeFiles[session.session].has(path);
-                html += `<li class="sidebar-item"><i class="fas fa-file-code"></i> <a href="/media/generated/${session.session}/${path}" target="_blank">${path}</a>${isNew ? '<span class="file-badge-new">NEW</span>' : ''}</li>`;
+                const fileExt = path.split('.').pop().toLowerCase();
+                const iconClass = getFileIcon(fileExt);
+                
+                html += `<li class="sidebar-item">
+                    <i class="${iconClass}"></i> 
+                    <a href="/media/generated/${session.session}/${path}" target="_blank" title="View ${path}">${path}</a>
+                    ${isNew ? '<span class="file-badge-new">NEW</span>' : ''}
+                    <button class="file-preview-btn" onclick="previewFile('${session.session}', '${path}')" title="Preview ${path}">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </li>`;
             }
             html += '</ul></div>';
         }
@@ -593,6 +617,86 @@ async function loadSidebarFiles() {
     for (const session of sessions) {
         knownSidebarFiles.code[session.session] = new Set(session.files.map(f => f.path || f));
     }
+}
+
+// Helper function to get appropriate icon for file type
+function getFileIcon(fileExt) {
+    const iconMap = {
+        'html': 'fas fa-file-code',
+        'css': 'fas fa-file-code',
+        'js': 'fas fa-file-code',
+        'py': 'fas fa-file-code',
+        'json': 'fas fa-file-code',
+        'xml': 'fas fa-file-code',
+        'txt': 'fas fa-file-alt',
+        'md': 'fas fa-file-alt',
+        'zip': 'fas fa-file-archive',
+        'png': 'fas fa-file-image',
+        'jpg': 'fas fa-file-image',
+        'jpeg': 'fas fa-file-image',
+        'gif': 'fas fa-file-image',
+        'svg': 'fas fa-file-image',
+        'pdf': 'fas fa-file-pdf',
+        'csv': 'fas fa-file-csv',
+        'xlsx': 'fas fa-file-excel',
+        'xls': 'fas fa-file-excel'
+    };
+    return iconMap[fileExt] || 'fas fa-file';
+}
+
+// File preview functionality
+async function previewFile(sessionId, filename) {
+    try {
+        const response = await fetch(`/media/generated/${sessionId}/${filename}`);
+        if (!response.ok) {
+            throw new Error('File not found');
+        }
+        
+        const content = await response.text();
+        const fileExt = filename.split('.').pop().toLowerCase();
+        
+        // Create modal for file preview
+        const modal = document.createElement('div');
+        modal.className = 'file-preview-modal';
+        modal.innerHTML = `
+            <div class="file-preview-content">
+                <div class="file-preview-header">
+                    <h3><i class="${getFileIcon(fileExt)}"></i> ${filename}</h3>
+                    <button onclick="closeFilePreview()" class="close-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="file-preview-body">
+                    <pre><code>${escapeHtml(content)}</code></pre>
+                </div>
+                <div class="file-preview-footer">
+                    <a href="/media/generated/${sessionId}/${filename}" target="_blank" class="btn-secondary">
+                        <i class="fas fa-external-link-alt"></i> Open in New Tab
+                    </a>
+                    <button onclick="closeFilePreview()" class="btn-primary">Close</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+    } catch (error) {
+        console.error('Error previewing file:', error);
+        alert('Error loading file preview');
+    }
+}
+
+function closeFilePreview() {
+    const modal = document.querySelector('.file-preview-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // Initialize the chat application when the DOM is loaded
