@@ -479,22 +479,31 @@ async function loadSidebarFiles() {
     }
 
     // Render reports
-    let html = '<div class="sidebar-section"><h4><i class="fas fa-file-alt"></i> Reports</h4>';
+    html = '<div class="sidebar-sections-flex">';
+    html += '<div class="sidebar-section sidebar-section-half sidebar-section-reports"><h4><i class="fas fa-file-alt"></i> Reports</h4>';
     if (reports.length === 0) {
         html += '<div class="sidebar-empty">No reports found.</div>';
     } else {
-        html += '<ul class="sidebar-list">';
+        html += '<div class="sidebar-card-grid">';
         for (const report of reports) {
             const path = report.path || report;
             const isNew = newReports.has(path);
-            html += `<li class="sidebar-item"><i class="fas fa-file"></i> <a href="/memory/${path}" target="_blank">${path}</a>${isNew ? '<span class="file-badge-new">NEW</span>' : ''}</li>`;
+            html += `
+              <div class="sidebar-card">
+                <div class="sidebar-card-icon"><i class="fas fa-file"></i></div>
+                <div class="sidebar-card-content">
+                  <a href="/memory/${path}" target="_blank">${path.split('/').pop()}</a>
+                  ${isNew ? '<span class="file-badge-new">NEW</span>' : ''}
+                </div>
+              </div>
+            `;
         }
-        html += '</ul>';
+        html += '</div>';
     }
     html += '</div>';
 
     // Render code outputs
-    html += '<div class="sidebar-section"><h4><i class="fas fa-code"></i> Code Outputs</h4>';
+    html += '<div class="sidebar-section sidebar-section-half sidebar-section-code"><h4><i class="fas fa-code"></i> Code Outputs</h4>';
     if (sessions.length === 0) {
         html += '<div class="sidebar-empty">No code outputs found.</div>';
     } else {
@@ -508,6 +517,7 @@ async function loadSidebarFiles() {
             html += '</ul></div>';
         }
     }
+    html += '</div>';
     html += '</div>';
 
     sidebar.innerHTML = html;
