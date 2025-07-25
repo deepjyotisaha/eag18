@@ -588,6 +588,7 @@ body {
 /* Left sidebar file browser styles */
 .sidebar-section { margin-bottom: 18px; }
 .sidebar-section h4 { font-size: 13px; margin-bottom: 6px; color: #334155; }
+.sidebar-section h4 i { color: #64748b; margin-right: 6px; }
 .sidebar-list { list-style: none; padding-left: 0; }
 .sidebar-item { font-size: 13px; margin-bottom: 4px; display: flex; align-items: center; transition: background 0.2s; border-radius: 6px; padding: 2px 6px; }
 .sidebar-item a { color: #2563eb; text-decoration: none; font-weight: 500; border-radius: 6px; padding: 2px 4px; transition: background 0.2s, color 0.2s; }
@@ -613,7 +614,7 @@ body {
   box-shadow: 0 1.5px 5px rgba(30, 41, 59, 0.06), 0 1px 3px rgba(148, 163, 184, 0.07);
   padding: 8px 10px;
   min-width: 0;
-  width: 100%;
+  width: 95%;
   display: flex;
   align-items: center;
   transition: box-shadow 0.2s, transform 0.2s;
@@ -910,7 +911,7 @@ body {
 
 .folder-title {
     font-weight: 600;
-    color: #1e293b;
+    color: #334155;
     font-size: 13px;
     flex: 1;
 }
@@ -1043,13 +1044,13 @@ body {
     border-color: #3b82f6;
 }
 
-/* Folder icon color variations */
+/* Folder icon color variations - override to match section headers */
 .sidebar-card-folder .sidebar-card-icon i.fa-folder {
-    color: #f59e0b;
+    color: #64748b;
 }
 
 .sidebar-card-folder .sidebar-card-icon i.fa-folder-plus {
-    color: #10b981;
+    color: #64748b;
 }
 
 /* Responsive adjustments for folder cards */
