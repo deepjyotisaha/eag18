@@ -97,9 +97,14 @@ class ChatApp {
                     formData.append('files', this.fileInput.files[i]);
                 }
             }
-            const response = await this.callAPI(formData);
+            const apiResponse = await this.callAPI(formData);
             this.removeAgentProcessingPlaceholder(agentProcessingDiv);
-            this.addMessage(response, 'agent');
+            let agentMsg = apiResponse.response || 'I apologize, but I didn\'t receive a response from the system. Please try again.';
+            // --- NEW: Display analysis if present ---
+            if (apiResponse && typeof apiResponse === 'object' && apiResponse.analysis) {
+                agentMsg += this.formatAnalysis(apiResponse.analysis);
+            }
+            this.addMessage(agentMsg, 'agent');
             if (this.fileInput) this.fileInput.value = '';
             this.clearFileIndicator();
         } catch (error) {
@@ -201,7 +206,7 @@ class ChatApp {
             }
 
             const data = await response.json();
-            return data.response || 'I apologize, but I didn\'t receive a response from the system. Please try again.';
+            return data; // Return the full response object
         } catch (error) {
             console.error('API call failed:', error);
             throw error;
@@ -426,6 +431,66 @@ class ChatApp {
             this.fileIndicator.parentNode.removeChild(this.fileIndicator);
             this.fileIndicator = null;
         }
+    }
+
+    // --- NEW: Format analysis for chat display ---
+    formatAnalysis(analysis) {
+        if (!analysis || typeof analysis !== 'object') return '';
+        let html = '<div class="agent-analysis-block">';
+        // Execution Summary
+        if (analysis.execution_summary) {
+            html += '<div class="agent-analysis-section"><b>Execution Summary:</b><ul>';
+            for (const [k, v] of Object.entries(analysis.execution_summary)) {
+                html += `<li><b>${this.capitalize(k)}:</b> ${this.truncateText(String(v), 200)}</li>`;
+            }
+            html += '</ul></div>';
+        }
+        // Steps
+        if (Array.isArray(analysis.steps) && analysis.steps.length > 0) {
+            html += '<div class="agent-analysis-section"><b>Steps:</b><ul>';
+            for (const step of analysis.steps) {
+                html += '<li>';
+                for (const [k, v] of Object.entries(step)) {
+                    html += `<b>${this.capitalize(k)}:</b> ${this.truncateText(String(v), 200)}; `;
+                }
+                html += '</li>';
+            }
+            html += '</ul></div>';
+        }
+        // Session
+        if (analysis.session) {
+            html += '<div class="agent-analysis-section"><b>Session:</b><ul>';
+            for (const [k, v] of Object.entries(analysis.session)) {
+                html += `<li><b>${this.capitalize(k)}:</b> ${this.truncateText(String(v), 200)}</li>`;
+            }
+            html += '</ul></div>';
+        }
+        // Cost Breakdown
+        if (Array.isArray(analysis.cost_breakdown) && analysis.cost_breakdown.length > 0) {
+            html += '<div class="agent-analysis-section"><b>Cost Breakdown:</b><ul>';
+            for (const cost of analysis.cost_breakdown) {
+                html += '<li>';
+                for (const [k, v] of Object.entries(cost)) {
+                    html += `<b>${this.capitalize(k)}:</b> ${this.truncateText(String(v), 200)}; `;
+                }
+                html += '</li>';
+            }
+            html += '</ul></div>';
+        }
+        html += '</div>';
+        return html;
+    }
+
+    // --- NEW: Helper to truncate text to 200 words ---
+    truncateText(text, maxWords) {
+        const words = text.split(/\s+/);
+        if (words.length <= maxWords) return text;
+        return words.slice(0, maxWords).join(' ') + '...';
+    }
+
+    // --- NEW: Capitalize helper ---
+    capitalize(str) {
+        return str.charAt(0).toUpperCase() + str.slice(1).replace(/_/g, ' ');
     }
 }
 
