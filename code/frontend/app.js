@@ -257,7 +257,6 @@ class ChatApp {
     }
 
     updateAgentStatus(status) {
-        console.log(status);
         const sidebar = document.querySelector('.right-sidebar .sidebar-content');
         if (!sidebar) return;
         let html = '';
@@ -272,36 +271,45 @@ class ChatApp {
                 </div>
             `;
         } else if (status.plan && status.plan.length > 0) {
-            // Render the plan with step statuses
-            html = `
-                <div style="padding: 10px;">
-                    <h4 style="margin-bottom: 10px;">Plan</h4>
-                    <ul style="list-style: none; padding: 0; margin: 0;">
-                        ${status.plan.map(step => `
-                            <li style="
-                                margin-bottom: 6px;
-                                padding: 6px 8px;
-                                border-radius: 5px;
-                                background: ${step.status === 'completed' ? '#d1fae5' : step.status === 'failed' ? '#fee2e2' : step.status === 'running' ? '#f0f8ff' : '#f3f4f6'};
-                                font-weight: ${step.status === 'running' ? 'bold' : 'normal'};
-                                color: ${step.status === 'failed' ? '#b91c1c' : step.status === 'running' ? '#2563eb' : '#374151'};
-                            ">
-                                <span>
-                                    ${step.status === 'completed' ? '✅' : step.status === 'failed' ? '❌' : step.status === 'running' ? '🔄' : '⏳'}
-                                    <strong>${step.agent}</strong>: ${step.description}
-                                    ${step.status === 'running' ? '<span style="margin-left:8px; color:#2563eb;">(Running)</span>' : ''}
-                                </span>
-                            </li>
-                        `).join('')}
-                    </ul>
-                    <div style="margin-top: 10px;">
-                        <strong>Progress:</strong> ${status.progress.completed}/${status.progress.total} (${status.progress.percentage}%)
-                    </div>
-                    <div>
-                        <strong>Elapsed:</strong> ${status.execution_time}s
-                    </div>
+            // Build a map of node id to node info for quick lookup
+            const nodeMap = {};
+            status.plan.forEach(node => { nodeMap[node.id] = node; });
+            // Build adjacency for edges
+            const edgeMap = {};
+            status.edges && status.edges.forEach(edge => {
+                if (!edgeMap[edge.source]) edgeMap[edge.source] = [];
+                edgeMap[edge.source].push(edge.target);
+            });
+            // Render nodes as boxes in a vertical list, with arrows for dependencies
+            html = `<div style="padding: 10px;">
+                <h4 style="margin-bottom: 10px;">Plan (DAG)</h4>
+                <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                    ${status.plan.map(node => {
+                        let color = '#f3f4f6';
+                        let icon = '⏳';
+                        if (node.status === 'completed') { color = '#d1fae5'; icon = '✅'; }
+                        else if (node.status === 'failed') { color = '#fee2e2'; icon = '❌'; }
+                        else if (node.status === 'running') { color = '#f0f8ff'; icon = '🔄'; }
+                        return `
+                            <div id="dag-node-${node.id}" style="margin-bottom: 8px; padding: 8px 12px; border-radius: 6px; background: ${color}; font-weight: ${node.status === 'running' ? 'bold' : 'normal'}; color: ${node.status === 'failed' ? '#b91c1c' : node.status === 'running' ? '#2563eb' : '#374151'}; border: 1px solid #e5e7eb; position: relative; min-width: 220px;">
+                                <span style="margin-right: 6px;">${icon}</span>
+                                <strong>${node.agent}</strong>: ${node.description}
+                                ${node.status === 'running' ? '<span style="margin-left:8px; color:#2563eb;">(Running)</span>' : ''}
+                                <div style="font-size: 12px; color: #6b7280; margin-top: 2px;">ID: ${node.id}</div>
+                            </div>
+                            ${edgeMap[node.id] ? edgeMap[node.id].map(target => `
+                                <div style="margin-left: 30px; margin-bottom: -8px; font-size: 18px; color: #a3a3a3;">↓</div>
+                            `).join('') : ''}
+                        `;
+                    }).join('')}
                 </div>
-            `;
+                <div style="margin-top: 10px;">
+                    <strong>Progress:</strong> ${status.progress.completed}/${status.progress.total} (${status.progress.percentage}%)
+                </div>
+                <div>
+                    <strong>Elapsed:</strong> ${status.execution_time}s
+                </div>
+            </div>`;
         } else {
             html = `
                 <div class="placeholder-content">

@@ -138,9 +138,7 @@ def is_agent_busy():
         return not current_execution_context.all_done()
 
 def get_agent_status():
-    """Get current agent execution status"""
     global current_execution_context, current_session_id, current_agent_state
-    
     with context_lock:
         if current_agent_state == "starting":
             return {
@@ -152,69 +150,50 @@ def get_agent_status():
                 'status': 'idle',
                 'message': 'No agent execution in progress'
             }
-        
         context = current_execution_context
-        
-        # Get all nodes except ROOT
         nodes = [node_id for node_id in context.plan_graph.nodes if node_id != "ROOT"]
-        total_steps = len(nodes)
-        
-        # Count completed and failed steps
-        completed_steps = sum(1 for node_id in nodes 
-                            if context.plan_graph.nodes[node_id].get('status') == 'completed')
-        failed_steps = sum(1 for node_id in nodes 
-                          if context.plan_graph.nodes[node_id].get('status') == 'failed')
-        
-        # Calculate percentage
-        percentage = int((completed_steps / total_steps * 100) if total_steps > 0 else 0)
-        
-        # Get current step (first running step)
+        plan = []
         current_step = None
         for node_id in nodes:
-            if context.plan_graph.nodes[node_id].get('status') == 'running':
-                node_data = context.plan_graph.nodes[node_id]
-                current_step = {
-                    'id': node_id,
-                    'description': node_data.get('description', 'Unknown step'),
-                    'agent': node_data.get('agent', 'Unknown agent'),
-                    'status': 'running'
-                }
-                break
-        
-        print(f"Current agent state: {current_agent_state}")
-        print(f"Plan graph: {context.plan_graph.nodes}")
-        # Calculate execution time
+            node_data = context.plan_graph.nodes[node_id]
+            step_info = {
+                'id': node_id,
+                'description': node_data.get('description', 'Unknown step'),
+                'agent': node_data.get('agent', 'Unknown agent'),
+                'status': node_data.get('status', 'pending')
+            }
+            plan.append(step_info)
+            if node_data.get('status') == 'running':
+                current_step = step_info
+        total_steps = len(plan)
+        completed_steps = sum(1 for step in plan if step['status'] == 'completed')
+        failed_steps = sum(1 for step in plan if step['status'] == 'failed')
+        percentage = int((completed_steps / total_steps * 100) if total_steps > 0 else 0)
         execution_time = 0
         if hasattr(context, 'start_time'):
             import time
             execution_time = int(time.time() - context.start_time)
-        
-        if context.all_done():
-            return {
-                'status': 'completed',
-                'session_id': current_session_id,
-                'progress': {
-                    'completed': completed_steps,
-                    'total': total_steps,
-                    'percentage': percentage
-                },
-                'completed_steps': completed_steps,
-                'failed_steps': failed_steps,
-                'execution_time': execution_time,
-                'current_step': current_step
-            }
-        else:
-            return {
-                'status': 'running',
-                'session_id': current_session_id,
-                'progress': {
-                    'completed': completed_steps,
-                    'total': total_steps,
-                    'percentage': percentage
-                },
-                'current_step': current_step,
-                'execution_time': execution_time
-            }
+        status = 'completed' if context.all_done() else 'running'
+        # Add edges for minimal DAG
+        edges = []
+        for source, target in context.plan_graph.edges():
+            if source != "ROOT":
+                edges.append({'source': source, 'target': target})
+        return {
+            'status': status,
+            'session_id': current_session_id,
+            'progress': {
+                'completed': completed_steps,
+                'total': total_steps,
+                'percentage': percentage
+            },
+            'completed_steps': completed_steps,
+            'failed_steps': failed_steps,
+            'execution_time': execution_time,
+            'current_step': current_step,
+            'plan': plan,
+            'edges': edges
+        }
 
 @app.route('/ask', methods=['POST'])
 def ask():
