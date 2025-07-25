@@ -263,61 +263,68 @@ class ChatApp {
 
         if (status.status === 'starting') {
             html = `
-                <div style="padding: 15px; background: #fef9c3; border-radius: 8px; margin: 10px 0;">
-                    <h4 style="margin: 0 0 10px 0; color: #b45309;">
+                <div style="padding: 14px 8px; background: #fef9c3; border-radius: 7px; margin: 8px 0; font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif;">
+                    <h4 style="margin: 0 0 8px 0; color: #b45309; font-size: 15px; font-weight: 600;">
                         <i class="fas fa-hourglass-start"></i> Agent is starting...
                     </h4>
-                    <p>Preparing agent and planning steps...</p>
+                    <p style="margin:0; font-size:13px; color:#92400e;">Preparing agent and planning steps...</p>
                 </div>
             `;
         } else if (status.plan && status.plan.length > 0) {
-            // Build a map of node id to node info for quick lookup
+            // Build a map of node id to node for quick lookup
             const nodeMap = {};
-            status.plan.forEach(node => { nodeMap[node.id] = node; });
-            // Build adjacency for edges
-            const edgeMap = {};
-            status.edges && status.edges.forEach(edge => {
-                if (!edgeMap[edge.source]) edgeMap[edge.source] = [];
-                edgeMap[edge.source].push(edge.target);
-            });
-            // Render nodes as boxes in a vertical list, with arrows for dependencies
-            html = `<div style="padding: 10px;">
-                <h4 style="margin-bottom: 10px;">Plan (DAG)</h4>
-                <div style="display: flex; flex-direction: column; align-items: flex-start;">
-                    ${status.plan.map(node => {
-                        let color = '#f3f4f6';
-                        let icon = '⏳';
-                        if (node.status === 'completed') { color = '#d1fae5'; icon = '✅'; }
-                        else if (node.status === 'failed') { color = '#fee2e2'; icon = '❌'; }
-                        else if (node.status === 'running') { color = '#f0f8ff'; icon = '🔄'; }
-                        return `
-                            <div id="dag-node-${node.id}" style="margin-bottom: 8px; padding: 8px 12px; border-radius: 6px; background: ${color}; font-weight: ${node.status === 'running' ? 'bold' : 'normal'}; color: ${node.status === 'failed' ? '#b91c1c' : node.status === 'running' ? '#2563eb' : '#374151'}; border: 1px solid #e5e7eb; position: relative; min-width: 220px;">
-                                <span style="margin-right: 6px;">${icon}</span>
-                                <strong>${node.agent}</strong>: ${node.description}
-                                ${node.status === 'running' ? '<span style="margin-left:8px; color:#2563eb;">(Running)</span>' : ''}
-                                <div style="font-size: 12px; color: #6b7280; margin-top: 2px;">ID: ${node.id}</div>
+            status.plan.forEach(n => nodeMap[n.id] = n);
+            // Build a map of node id to children for edge rendering
+            const childMap = {};
+            if (status.edges) {
+                status.edges.forEach(e => {
+                    if (!childMap[e.source]) childMap[e.source] = [];
+                    childMap[e.source].push(e.target);
+                });
+            }
+            // Helper for status pill
+            function statusPill(nodeStatus) {
+                let color = '#64748b', bg = '#f3f4f6', text = 'Pending';
+                if (nodeStatus === 'completed') { color = '#15803d'; bg = '#dcfce7'; text = 'Completed'; }
+                else if (nodeStatus === 'running') { color = '#2563eb'; bg = '#e0f2fe'; text = 'Running'; }
+                else if (nodeStatus === 'failed') { color = '#b91c1c'; bg = '#fee2e2'; text = 'Failed'; }
+                return `<span class="dag-status-pill" style="display:inline-block; min-width:60px; padding:2px 10px; border-radius:12px; font-size:11px; font-weight:600; background:${bg}; color:${color}; margin-left:8px; vertical-align:middle; letter-spacing:0.02em;">${text}</span>`;
+            }
+            // Render nodes in order (topological or as given)
+            html += '<div class="dag-plan-list">';
+            status.plan.forEach(node => {
+                let icon = '⏳', nodeClass = 'pending';
+                if (node.status === 'completed') { icon = '✅'; nodeClass = 'completed'; }
+                else if (node.status === 'running') { icon = '🔄'; nodeClass = 'running'; }
+                else if (node.status === 'failed') { icon = '❌'; nodeClass = 'failed'; }
+                html += `
+                    <div class="dag-node ${nodeClass}" style="display:flex;align-items:center;gap:10px;">
+                        <span style="font-size:15px;flex-shrink:0;">${icon}</span>
+                        <div style="flex:1;min-width:0;">
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <span class="dag-agent-name" style="font-weight:600;font-size:13px;color:#0f172a;letter-spacing:0.01em;">${node.agent}</span>
+                                ${statusPill(node.status)}
                             </div>
-                            ${edgeMap[node.id] ? edgeMap[node.id].map(target => `
-                                <div style="margin-left: 30px; margin-bottom: -8px; font-size: 18px; color: #a3a3a3;">↓</div>
-                            `).join('') : ''}
-                        `;
-                    }).join('')}
-                </div>
-                <div style="margin-top: 10px;">
-                    <strong>Progress:</strong> ${status.progress.completed}/${status.progress.total} (${status.progress.percentage}%)
-                </div>
-                <div>
-                    <strong>Elapsed:</strong> ${status.execution_time}s
-                </div>
-            </div>`;
+                            <div class="dag-desc" style="font-size:12px;color:#64748b;margin-top:2px;line-height:1.4;">${node.description}</div>
+                        </div>
+                    </div>
+                `;
+                // Draw arrow if this node has children (for minimal vertical DAG look)
+                if (childMap[node.id] && childMap[node.id].length > 0) {
+                    html += `<div class="dag-arrow" style="margin-left:22px;margin-bottom:-2px;font-size:12px;color:#cbd5e1;">↓</div>`;
+                }
+            });
+            html += '</div>';
+            // Progress bar and time
+            if (status.progress) {
+                html += `<div style="margin-top:12px;font-size:12px;color:#64748b;display:flex;align-items:center;gap:10px;">
+                    <span>Progress:</span>
+                    <span style="font-weight:600;color:#2563eb;">${status.progress.completed}/${status.progress.total}</span>
+                    <span style="margin-left:auto;">⏱️ ${status.execution_time || 0}s</span>
+                </div>`;
+            }
         } else {
-            html = `
-                <div class="placeholder-content">
-                    <i class="fas fa-chart-line"></i>
-                    <p>Execution Analytics</p>
-                    <small>Monitor agent performance, execution flow, and system metrics in real-time</small>
-                </div>
-            `;
+            html = `<div style="padding: 12px; color: #64748b; font-size: 13px;">No plan available.</div>`;
         }
         sidebar.innerHTML = html;
     }

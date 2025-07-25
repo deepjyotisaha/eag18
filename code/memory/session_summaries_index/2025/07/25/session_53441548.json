@@ -1,0 +1,127 @@
+{
+  "directed": true,
+  "multigraph": false,
+  "graph": {
+    "session_id": "53441548",
+    "original_query": "Conduct comprehensive market research on electric vehicle trends and create a detailed analysis report with visualizations",
+    "file_manifest": [],
+    "created_at": "2025-07-25T11:05:48.748417",
+    "status": "running",
+    "output_chain": {},
+    "validation_results": {
+      "is_valid": true,
+      "is_dag": true,
+      "cycles": [],
+      "disconnected_components": [],
+      "orphaned_nodes": [],
+      "root_nodes": [],
+      "leaf_nodes": [
+        "T004"
+      ],
+      "warnings": [],
+      "errors": []
+    }
+  },
+  "nodes": [
+    {
+      "description": "Initial Query",
+      "agent": "System",
+      "status": "completed",
+      "id": "ROOT"
+    },
+    {
+      "id": "T001",
+      "description": "Gather comprehensive market data on electric vehicle trends from various sources.",
+      "agent": "RetrieverAgent",
+      "agent_prompt": "Gather comprehensive market data on electric vehicle trends from reliable sources such as industry reports, news articles, academic papers, and government data. Focus on sales data, market share, technological advancements, policy changes, consumer behavior, and charging infrastructure development. Provide a list of all sources used.",
+      "reads": [],
+      "writes": [
+        "T001"
+      ],
+      "status": "running",
+      "output": null,
+      "error": null,
+      "cost": 0.0,
+      "start_time": "2025-07-25T11:05:48.764954",
+      "end_time": null,
+      "execution_time": 0.0
+    },
+    {
+      "id": "T002",
+      "description": "Analyze the gathered data to identify key trends in the electric vehicle market.",
+      "agent": "ThinkerAgent",
+      "agent_prompt": "Analyze the market data gathered in T001 to identify key trends in the electric vehicle market. Focus on growth rates, regional differences, technological innovations, consumer preferences, and competitive landscape. Identify emerging opportunities and potential challenges. Provide justifications for the analysis.",
+      "reads": [
+        "T001"
+      ],
+      "writes": [
+        "T002"
+      ],
+      "status": "pending",
+      "output": null,
+      "error": null,
+      "cost": 0.0,
+      "start_time": null,
+      "end_time": null,
+      "execution_time": 0.0
+    },
+    {
+      "id": "T003",
+      "description": "Generate visualizations to represent the identified trends in the electric vehicle market.",
+      "agent": "CoderAgent",
+      "agent_prompt": "Based on the analysis in T002, generate a variety of visualizations to effectively represent the identified trends in the electric vehicle market. Include line charts for sales growth, bar charts for market share, pie charts for regional differences, and other appropriate visualizations to illustrate key findings. Use Python with matplotlib or seaborn libraries to create high-quality, publication-ready graphics. Provide comments in the code.",
+      "reads": [
+        "T002"
+      ],
+      "writes": [
+        "T003"
+      ],
+      "status": "pending",
+      "output": null,
+      "error": null,
+      "cost": 0.0,
+      "start_time": null,
+      "end_time": null,
+      "execution_time": 0.0
+    },
+    {
+      "id": "T004",
+      "description": "Create a detailed analysis report incorporating the data, analysis, and visualizations.",
+      "agent": "FormatterAgent",
+      "agent_prompt": "Create a detailed analysis report incorporating the data gathered in T001, the analysis performed in T002, and the visualizations generated in T003. The report should include an introduction, a summary of key findings, detailed discussions of each trend, and visually appealing charts and graphs. The report should be well-structured, professionally formatted, and suitable for presentation to stakeholders. Use HTML.",
+      "reads": [
+        "T001",
+        "T002",
+        "T003"
+      ],
+      "writes": [
+        "T004"
+      ],
+      "status": "pending",
+      "output": null,
+      "error": null,
+      "cost": 0.0,
+      "start_time": null,
+      "end_time": null,
+      "execution_time": 0.0
+    }
+  ],
+  "links": [
+    {
+      "source": "ROOT",
+      "target": "T001"
+    },
+    {
+      "source": "T001",
+      "target": "T002"
+    },
+    {
+      "source": "T002",
+      "target": "T003"
+    },
+    {
+      "source": "T003",
+      "target": "T004"
+    }
+  ]
+}
