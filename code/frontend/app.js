@@ -429,9 +429,102 @@ class ChatApp {
     }
 }
 
+let knownSidebarFiles = { reports: new Set(), code: {} };
+
+async function loadSidebarFiles() {
+    const sidebar = document.getElementById('left-sidebar-content');
+    if (!sidebar) return;
+
+    // Fetch reports (with mtime)
+    let reports = [];
+    try {
+        const res = await fetch('/list-reports');
+        const data = await res.json();
+        reports = data.reports || [];
+    } catch {}
+
+    // Fetch code outputs (with mtime)
+    let sessions = [];
+    try {
+        const res = await fetch('/list-code-outputs');
+        const data = await res.json();
+        sessions = data.sessions || [];
+    } catch {}
+
+    // Sort reports by mtime descending
+    reports.sort((a, b) => (b.mtime || 0) - (a.mtime || 0));
+
+    // Sort files in each session by mtime descending
+    for (const session of sessions) {
+        session.files.sort((a, b) => (b.mtime || 0) - (a.mtime || 0));
+    }
+
+    // Track new files
+    let newReports = new Set();
+    let newCodeFiles = {};
+    if (knownSidebarFiles.reports.size > 0) {
+        for (const r of reports.map(r => r.path || r)) {
+            if (!knownSidebarFiles.reports.has(r)) newReports.add(r);
+        }
+    }
+    if (Object.keys(knownSidebarFiles.code).length > 0) {
+        for (const session of sessions) {
+            newCodeFiles[session.session] = new Set();
+            for (const file of session.files.map(f => f.path || f)) {
+                if (!knownSidebarFiles.code[session.session] || !knownSidebarFiles.code[session.session].has(file)) {
+                    newCodeFiles[session.session].add(file);
+                }
+            }
+        }
+    }
+
+    // Render reports
+    let html = '<div class="sidebar-section"><h4><i class="fas fa-file-alt"></i> Reports</h4>';
+    if (reports.length === 0) {
+        html += '<div class="sidebar-empty">No reports found.</div>';
+    } else {
+        html += '<ul class="sidebar-list">';
+        for (const report of reports) {
+            const path = report.path || report;
+            const isNew = newReports.has(path);
+            html += `<li class="sidebar-item"><i class="fas fa-file"></i> <a href="/memory/${path}" target="_blank">${path}</a>${isNew ? '<span class="file-badge-new">NEW</span>' : ''}</li>`;
+        }
+        html += '</ul>';
+    }
+    html += '</div>';
+
+    // Render code outputs
+    html += '<div class="sidebar-section"><h4><i class="fas fa-code"></i> Code Outputs</h4>';
+    if (sessions.length === 0) {
+        html += '<div class="sidebar-empty">No code outputs found.</div>';
+    } else {
+        for (const session of sessions) {
+            html += `<div class="sidebar-session"><div class="sidebar-session-title"><i class="fas fa-folder"></i> ${session.session}</div><ul class="sidebar-list">`;
+            for (const file of session.files) {
+                const path = file.path || file;
+                const isNew = newCodeFiles[session.session] && newCodeFiles[session.session].has(path);
+                html += `<li class="sidebar-item"><i class="fas fa-file-code"></i> <a href="/media/generated/${session.session}/${path}" target="_blank">${path}</a>${isNew ? '<span class="file-badge-new">NEW</span>' : ''}</li>`;
+            }
+            html += '</ul></div>';
+        }
+    }
+    html += '</div>';
+
+    sidebar.innerHTML = html;
+
+    // Update known files for next refresh
+    knownSidebarFiles.reports = new Set(reports.map(r => r.path || r));
+    knownSidebarFiles.code = {};
+    for (const session of sessions) {
+        knownSidebarFiles.code[session.session] = new Set(session.files.map(f => f.path || f));
+    }
+}
+
 // Initialize the chat application when the DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     new ChatApp();
+    loadSidebarFiles();
+    setInterval(loadSidebarFiles, 10000); // Refresh every 10 seconds
 });
 
 // Add sophisticated CSS for code blocks and links

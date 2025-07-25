@@ -11,6 +11,8 @@ import sys
 import os
 import uuid
 import shutil
+import glob
+import time
 
 # Add the current directory to Python path to import modules
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -280,6 +282,43 @@ def serve_index():
 @app.route('/<path:path>')
 def serve_static(path):
     return send_from_directory(app.static_folder, path)
+
+@app.route('/memory/<path:filename>')
+def serve_memory_file(filename):
+    return send_from_directory('memory', filename)
+
+@app.route('/list-reports', methods=['GET'])
+def list_reports():
+    report_files = glob.glob('memory/**/*.html', recursive=True)
+    reports = []
+    for f in report_files:
+        try:
+            mtime = os.path.getmtime(f)
+        except Exception:
+            mtime = 0
+        reports.append({'path': os.path.relpath(f, 'memory'), 'mtime': mtime})
+    return jsonify({'reports': reports})
+
+@app.route('/list-code-outputs', methods=['GET'])
+def list_code_outputs():
+    session_dirs = glob.glob('media/generated/session_*')
+    sessions = []
+    for session_dir in session_dirs:
+        files = []
+        for root, _, filenames in os.walk(session_dir):
+            for fname in filenames:
+                fpath = os.path.join(root, fname)
+                rel_path = os.path.relpath(fpath, session_dir)
+                try:
+                    mtime = os.path.getmtime(fpath)
+                except Exception:
+                    mtime = 0
+                files.append({'path': rel_path, 'mtime': mtime})
+        sessions.append({
+            'session': os.path.basename(session_dir),
+            'files': files
+        })
+    return jsonify({'sessions': sessions})
 
 if __name__ == '__main__':
     print(" Starting EAG18 Web API...")
