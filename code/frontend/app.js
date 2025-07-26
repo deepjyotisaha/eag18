@@ -196,7 +196,7 @@ class ChatApp {
 
     async callAPI(formData) {
         try {
-            const response = await fetch('http://127.0.0.1:5000/ask', {
+            const response = await fetch('/ask', { // CHANGED: use relative URL
                 method: 'POST',
                 body: formData
             });
@@ -272,7 +272,7 @@ class ChatApp {
 
     async fetchAgentStatus() {
         try {
-            const response = await fetch('http://127.0.0.1:5000/status');
+            const response = await fetch('/status'); // CHANGED: use relative URL
             if (!response.ok) throw new Error('Failed to fetch agent status');
             const status = await response.json();
             this.updateAgentStatus(status);
