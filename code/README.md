@@ -24,7 +24,7 @@ User Query → File Upload → File Profiling → Planning → Multi-Agent Execu
 
 Watch a walkthrough of the EAG18 Agentic Query Assistant in action:
 
-[![Demo Video](https://img.youtube.com/vi/YOUR_VIDEO_ID_HERE/0.jpg)](https://www.youtube.com/watch?v=YOUR_VIDEO_ID_HERE)
+[![Demo Video](https://img.youtube.com/vi/A0kznksbOiU/0.jpg)](https://www.youtube.com/watch?v=A0kznksbOiU)
 
 > _Replace the link above with your actual demo video URL._
 
